@@ -1,3 +1,5 @@
+![Logo](https://res.cloudinary.com/candy-labs/image/upload/v1644974796/smaller_dep6qo.png)
+
 # CandyContracts
 Open-source NFT contract implementations. 
 
