@@ -12,3 +12,8 @@ Open-source NFT contract implementations.
 ## Security 
 * Access Control 
 * Re-entrancy Guard
+
+## Testing / Auditing 
+To start using these contracts with [Hardhat](https://hardhat.org/) simply run the following commands:
+1. `npm install`
+2. `npx hardhat compile` or `npx hardhat test`
