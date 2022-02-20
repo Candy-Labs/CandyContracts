@@ -1,4 +1,9 @@
 ![Logo](https://res.cloudinary.com/candy-labs/image/upload/v1644974796/smaller_dep6qo.png)
+</br>
+</br>
+![Twitter](https://img.shields.io/twitter/follow/Candy_Chain_?style=social)
+![GithubFollow](https://img.shields.io/github/followers/Candy-Labs?style=social)
+![ContractStatus](https://img.shields.io/badge/Contract%20Status-Verified-brightgreen)
 
 # CandyContracts
 Open-source NFT contract implementations for everyone! Used by the Candy Chain web platform.
