@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
+
 async function deploySingle() {
   const [owner, candyWallet, royalty1, royalty2] = await ethers.getSigners();
   const CandyCreatorFactory = await ethers.getContractFactory("CandyCreatorV1A");

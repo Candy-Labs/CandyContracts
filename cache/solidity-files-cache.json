@@ -5031,8 +5031,8 @@
       ]
     },
     "/home/hunter/CandyContracts/contracts/CandyCreatorV1A.sol": {
-      "lastModificationDate": 1644973733024,
-      "contentHash": "1bc0c8fc9a168bd0c22190bd49019da8",
+      "lastModificationDate": 1645223381827,
+      "contentHash": "e9b5d2ff07ef549a7edf315b7fa67e2e",
       "sourceName": "contracts/CandyCreatorV1A.sol",
       "solcConfig": {
         "version": "0.8.4",

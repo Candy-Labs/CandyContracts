@@ -45,7 +45,7 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
   string private base;
   bool private mintingActive;
   bool private lockedPayees;
-  uint256 private maxPublicMints;
+  uint256 private maxPublicMints = 1;
   uint256 private mintPrice;
   uint256 private mintSize;
   uint256 private revealTime;
@@ -53,7 +53,7 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
   // @notice Whitelist functionality 
   bool private whitelistActive;
   bytes32 public whitelistMerkleRoot;
-  uint256 private maxWhitelistMints;
+  uint256 private maxWhitelistMints = 1;
   mapping(address => bool) public whitelistClaimed;
 
   event UpdatedRevealTimestamp(uint256 _old, uint256 _new);
@@ -81,8 +81,6 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
               address [] memory splitAddresses,
               uint256 [] memory splitShares) 
               ERC721A(name, symbol, _placeholderURI) {
-                setMaxPublicMints(1);
-                setMaxWhitelistMints(1);
                 setMintPrice(_mintPrice);
                 setMintSize(_mintSize);
                 addPayee(_candyWallet, 500);
