@@ -6,7 +6,7 @@
 ![ContractStatus](https://img.shields.io/badge/Contract%20Status-Verified-brightgreen)
 
 # CandyContracts
-Open-source NFT contract implementations for everyone! Used by the Candy Chain web platform.
+Open-source NFT contract implementations for everyone! Used by the [Candy Chain Web Platform](https://www.candychain.io)!
 
 ## Features 
 * Minimal Setup
