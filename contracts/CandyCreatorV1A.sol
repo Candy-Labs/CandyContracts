@@ -53,8 +53,7 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
   // @notice Whitelist functionality 
   bool private whitelistActive;
   bytes32 public whitelistMerkleRoot;
-  uint256 private maxWhitelistMints = 1;
-  mapping(address => bool) public whitelistClaimed;
+  uint64 private maxWhitelistMints = 1;
 
   event UpdatedRevealTimestamp(uint256 _old, uint256 _new);
   event UpdatedMintPrice(uint256 _old, uint256 _new);
@@ -108,12 +107,12 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
   //  requires amount * mintPrice to be sent by caller
   //  nonReentrant() function. More comments within code.
   // @param uint amount - number of tokens minted
-  function whitelistMint(bytes32[] calldata merkleProof, uint256 amount) external payable nonReentrant() {
+  function whitelistMint(bytes32[] calldata merkleProof, uint64 amount) external payable nonReentrant() {
     // @notice using Checks-Effects-Interactions
     require(mintingActive, "Minting not enabled");
     require(whitelistActive, "Whitelist not required, use publicMint()");
     require(_msgValue() == mintPrice * amount, "Wrong amount of Native Token");
-    require(_totalSupply() + amount <= mintSize, "Can not mint that many");
+    require(totalSupply() + amount <= mintSize, "Can not mint that many");
     require(amount <= maxWhitelistMints, "Exceeds maximum whitelist mints");
     require(
           MerkleProof.verify(
@@ -123,9 +122,10 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
           ),
           "Address not whitelisted"
     );
-    require(!whitelistClaimed[_msgSender()], "You have already claimed your tokens");
-    _safeMint(_msgSender(), amount);
-    whitelistClaimed[_msgSender()] = true; 
+    uint64 numWhitelistMinted = _getAux(_msgSender()) + amount;
+    require(numWhitelistMinted <= maxWhitelistMints, "Not enough whitelist slots.");
+    _mint(_msgSender(), amount, '', false);
+    _setAux(_msgSender(), numWhitelistMinted); 
   }
 
   // @notice this is the mint function, mint Fees in ERC20,
@@ -136,9 +136,9 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
     require(!whitelistActive, "publicMint() disabled because whitelist is enabled");
     require(mintingActive, "Minting not enabled");
     require(_msgValue() == mintPrice * amount, "Wrong amount of Native Token");
-    require(_totalSupply() + amount <= mintSize, "Can not mint that many");
+    require(totalSupply() + amount <= mintSize, "Can not mint that many");
     require(amount <= maxPublicMints, "Exceeds public transaction limit");
-    _safeMint(_msgSender(), amount);
+    _mint(_msgSender(), amount, '', false);
   }
 
 
@@ -255,7 +255,7 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
 
   // @notice this will set the maximum number of tokens a whitelisted user can mint.
   // @param uint256 _amount - max amount of tokens
-  function setMaxWhitelistMints(uint256 _amount) public onlyOwner {
+  function setMaxWhitelistMints(uint64 _amount) public onlyOwner {
     uint256 oldAmount = maxWhitelistMints;
     maxWhitelistMints = _amount;
     emit UpdatedMaxWhitelistMints(oldAmount, maxWhitelistMints);
@@ -335,11 +335,6 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
   // during the whitelist period
   function publicMaxMints() external view returns (uint256) {
     return maxPublicMints;
-  }
-
-  // @notice will return current token count
-  function totalSupply() external view returns (uint256) {
-    return _totalSupply();
   }
 
   // @notice this is a public getter for ETH balance on contract
