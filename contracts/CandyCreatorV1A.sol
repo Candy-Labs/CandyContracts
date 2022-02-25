@@ -124,7 +124,7 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
           "Address not whitelisted"
     );
     require(!whitelistClaimed[_msgSender()], "You have already claimed your tokens");
-    _safeMint(_msgSender(), amount);
+    _mint(_msgSender(), amount);
     whitelistClaimed[_msgSender()] = true; 
   }
 
@@ -138,7 +138,7 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
     require(_msgValue() == mintPrice * amount, "Wrong amount of Native Token");
     require(_totalSupply() + amount <= mintSize, "Can not mint that many");
     require(amount <= maxPublicMints, "Exceeds public transaction limit");
-    _safeMint(_msgSender(), amount);
+    _mint(_msgSender(), amount);
   }
 
 
