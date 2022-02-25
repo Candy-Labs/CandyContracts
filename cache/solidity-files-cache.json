@@ -5031,8 +5031,8 @@
       ]
     },
     "/home/hunter/CandyContracts/contracts/CandyCreatorV1A.sol": {
-      "lastModificationDate": 1645223381827,
-      "contentHash": "e9b5d2ff07ef549a7edf315b7fa67e2e",
+      "lastModificationDate": 1645823876561,
+      "contentHash": "a8d743f5d85d2aeef6ac69ebf27c8d66",
       "sourceName": "contracts/CandyCreatorV1A.sol",
       "solcConfig": {
         "version": "0.8.4",
@@ -5143,8 +5143,8 @@
       ]
     },
     "/home/hunter/CandyContracts/contracts/token/ERC721/ERC721A.sol": {
-      "lastModificationDate": 1644973733044,
-      "contentHash": "148e65cedc82585246eb2f4f24f095d6",
+      "lastModificationDate": 1645823648022,
+      "contentHash": "841e95bac209f0844308ec3e5de84578",
       "sourceName": "contracts/token/ERC721/ERC721A.sol",
       "solcConfig": {
         "version": "0.8.4",
@@ -5173,6 +5173,7 @@
         "@openzeppelin/contracts/token/ERC721/IERC721.sol",
         "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol",
         "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol",
+        "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol",
         "@openzeppelin/contracts/utils/Address.sol",
         "@openzeppelin/contracts/utils/Strings.sol",
         "@openzeppelin/contracts/utils/introspection/ERC165.sol",
@@ -5582,6 +5583,43 @@
       ],
       "artifacts": [
         "Counters"
+      ]
+    },
+    "/home/hunter/CandyContracts/node_modules/@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol": {
+      "lastModificationDate": 1645823564189,
+      "contentHash": "f4dd06783f321aa26179bc2b6e361c29",
+      "sourceName": "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../IERC721.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IERC721Enumerable"
       ]
     }
   }

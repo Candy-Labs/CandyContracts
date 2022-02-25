@@ -171,7 +171,7 @@ describe("Whitelist Minting", function () {
     .whitelistMint(ownerProof, 1, {
       value: fee
     }))
-    .to.be.revertedWith("You have already claimed your tokens")
+    .to.be.revertedWith("Not enough whitelist slots.")
     
 
   });
