@@ -54,7 +54,6 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
   bool private whitelistActive;
   bytes32 public whitelistMerkleRoot;
   uint256 private maxWhitelistMints = 1;
-  mapping(address => bool) public whitelistClaimed;
 
   event UpdatedRevealTimestamp(uint256 _old, uint256 _new);
   event UpdatedMintPrice(uint256 _old, uint256 _new);
@@ -123,9 +122,10 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
           ),
           "Address not whitelisted"
     );
-    require(!whitelistClaimed[_msgSender()], "You have already claimed your tokens");
+    uint256 numWhitelistMinted = _getAux(_msgSender()) + amount;
+    require(numWhitelistMinted <= maxWhitelistMints, "Not enough whitelist slots.");
     _mint(_msgSender(), amount);
-    whitelistClaimed[_msgSender()] = true; 
+    _setAux(_msgSender(), numWhitelistMinted); 
   }
 
   // @notice this is the mint function, mint Fees in ERC20,
