@@ -70,7 +70,7 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
     }
 
     // The tokenId of the next token to be minted.
-    uint256 internal _currentIndex;
+    uint256 internal _currentIndex = 1;
 
     // The number of tokens burned.
     uint256 internal _burnCounter;
@@ -80,6 +80,9 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
 
     // Token symbol
     string private _symbol;
+
+    // Placeholder JSON URI
+    string private _placeholderURI;
 
     // Mapping from token ID to ownership details
     // An empty struct value does not necessarily mean the token is unowned. See ownershipOf implementation for details.
@@ -94,9 +97,10 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
-    constructor(string memory name_, string memory symbol_) {
+    constructor(string memory name_, string memory symbol_, string memory placeholderURI_) {
         _name = name_;
         _symbol = symbol_;
+        _placeholderURI = placeholderURI_;
     }
 
     /**
@@ -106,7 +110,7 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
         // Counter underflow is impossible as _burnCounter cannot be incremented
         // more than _currentIndex times
         unchecked {
-            return _currentIndex - _burnCounter;    
+            return _currentIndex - _burnCounter - 1;    
         }
     }
 
@@ -217,10 +221,9 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
      * @dev See {IERC721Metadata-tokenURI}.
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
-
+         if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
         string memory baseURI = _baseURI();
-        return bytes(baseURI).length != 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : '';
+        return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, "/", tokenId.toString(), ".json")) : _placeholderURI;
     }
 
     /**
