@@ -35,7 +35,7 @@ error URIQueryForNonexistentToken();
  * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
  * the Metadata extension. Built to optimize for lower gas during batch mints.
  *
- * Assumes serials are sequentially minted starting at 0 (e.g. 0, 1, 2, 3..).
+ * Assumes serials are sequentially minted starting at _startTokenId() (defaults to 0, e.g. 0, 1, 2, 3..).
  *
  * Assumes that an owner cannot have more than 2**64 - 1 (max value of uint64) of supply.
  *
@@ -64,13 +64,13 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
         // Keeps track of burn count with minimal overhead for tokenomics.
         uint64 numberBurned;
         // For miscellaneous variable(s) pertaining to the address
-        // (e.g. number of whitelist mint slots used). 
+        // (e.g. number of whitelist mint slots used).
         // If there are multiple variables, please pack them into a uint64.
         uint64 aux;
     }
 
     // The tokenId of the next token to be minted.
-    uint256 internal _currentIndex = 1;
+    uint256 internal _currentIndex;
 
     // The number of tokens burned.
     uint256 internal _burnCounter;
@@ -80,9 +80,6 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
 
     // Token symbol
     string private _symbol;
-
-    // Placeholder JSON URI
-    string private _placeholderURI;
 
     // Mapping from token ID to ownership details
     // An empty struct value does not necessarily mean the token is unowned. See ownershipOf implementation for details.
@@ -97,20 +94,39 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
-    constructor(string memory name_, string memory symbol_, string memory placeholderURI_) {
+    constructor(string memory name_, string memory symbol_) {
         _name = name_;
         _symbol = symbol_;
-        _placeholderURI = placeholderURI_;
+        _currentIndex = _startTokenId();
+    }
+
+    /**
+     * To change the starting tokenId, please override this function.
+     */
+    function _startTokenId() internal view virtual returns (uint256) {
+        return 0;
     }
 
     /**
      * @dev See {IERC721Enumerable-totalSupply}.
+     * @dev Burned tokens are calculated here, use _totalMinted() if you want to count just minted tokens.
      */
     function totalSupply() public view returns (uint256) {
         // Counter underflow is impossible as _burnCounter cannot be incremented
-        // more than _currentIndex times
+        // more than _currentIndex - _startTokenId() times
         unchecked {
-            return _currentIndex - _burnCounter - 1;    
+            return _currentIndex - _burnCounter - _startTokenId();
+        }
+    }
+
+    /**
+     * Returns the total amount of tokens minted in the contract.
+     */
+    function _totalMinted() internal view returns (uint256) {
+        // Counter underflow is impossible as _currentIndex does not decrement,
+        // and it is initialized to _startTokenId()
+        unchecked {
+            return _currentIndex - _startTokenId();
         }
     }
 
@@ -173,14 +189,14 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
         uint256 curr = tokenId;
 
         unchecked {
-            if (curr < _currentIndex) {
+            if (_startTokenId() <= curr && curr < _currentIndex) {
                 TokenOwnership memory ownership = _ownerships[curr];
                 if (!ownership.burned) {
                     if (ownership.addr != address(0)) {
                         return ownership;
                     }
-                    // Invariant: 
-                    // There will always be an ownership that has an address and is not burned 
+                    // Invariant:
+                    // There will always be an ownership that has an address and is not burned
                     // before an ownership that does not have an address and is not burned.
                     // Hence, curr will not underflow.
                     while (true) {
@@ -221,9 +237,10 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
      * @dev See {IERC721Metadata-tokenURI}.
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-         if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
+        if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
+
         string memory baseURI = _baseURI();
-        return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, "/", tokenId.toString(), ".json")) : _placeholderURI;
+        return bytes(baseURI).length != 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : '';
     }
 
     /**
@@ -307,7 +324,7 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
         bytes memory _data
     ) public virtual override {
         _transfer(from, to, tokenId);
-        if (!_checkOnERC721Received(from, to, tokenId, _data)) {
+        if (to.isContract() && !_checkContractOnERC721Received(from, to, tokenId, _data)) {
             revert TransferToNonERC721ReceiverImplementer();
         }
     }
@@ -320,7 +337,8 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
      * Tokens start existing when they are minted (`_mint`),
      */
     function _exists(uint256 tokenId) internal view returns (bool) {
-        return tokenId < _currentIndex && !_ownerships[tokenId].burned;
+        return _startTokenId() <= tokenId && tokenId < _currentIndex &&
+            !_ownerships[tokenId].burned;
     }
 
     function _safeMint(address to, uint256 quantity) internal {
@@ -378,15 +396,22 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
             _ownerships[startTokenId].startTimestamp = uint64(block.timestamp);
 
             uint256 updatedIndex = startTokenId;
+            uint256 end = updatedIndex + quantity;
 
-            for (uint256 i; i < quantity; i++) {
-                emit Transfer(address(0), to, updatedIndex);
-                if (safe && !_checkOnERC721Received(address(0), to, updatedIndex, _data)) {
-                    revert TransferToNonERC721ReceiverImplementer();
-                }
-                updatedIndex++;
+            if (safe && to.isContract()) {
+                do {
+                    emit Transfer(address(0), to, updatedIndex);
+                    if (!_checkContractOnERC721Received(address(0), to, updatedIndex++, _data)) {
+                        revert TransferToNonERC721ReceiverImplementer();
+                    }
+                } while (updatedIndex != end);
+                // Reentrancy protection
+                if (_currentIndex != startTokenId) revert();
+            } else {
+                do {
+                    emit Transfer(address(0), to, updatedIndex++);
+                } while (updatedIndex != end);
             }
-
             _currentIndex = updatedIndex;
         }
         _afterTokenTransfers(address(0), to, startTokenId, quantity);
@@ -496,7 +521,7 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
         _afterTokenTransfers(prevOwnership.addr, address(0), tokenId, 1);
 
         // Overflow not possible, as _burnCounter cannot be exceed _currentIndex times.
-        unchecked { 
+        unchecked {
             _burnCounter++;
         }
     }
@@ -516,8 +541,7 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
     }
 
     /**
-     * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
-     * The call is not executed if the target address is not a contract.
+     * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target contract.
      *
      * @param from address representing the previous owner of the given token ID
      * @param to target address that will receive the tokens
@@ -525,26 +549,22 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
      * @param _data bytes optional data to send along with the call
      * @return bool whether the call correctly returned the expected magic value
      */
-    function _checkOnERC721Received(
+    function _checkContractOnERC721Received(
         address from,
         address to,
         uint256 tokenId,
         bytes memory _data
     ) private returns (bool) {
-        if (to.isContract()) {
-            try IERC721Receiver(to).onERC721Received(_msgSender(), from, tokenId, _data) returns (bytes4 retval) {
-                return retval == IERC721Receiver(to).onERC721Received.selector;
-            } catch (bytes memory reason) {
-                if (reason.length == 0) {
-                    revert TransferToNonERC721ReceiverImplementer();
-                } else {
-                    assembly {
-                        revert(add(32, reason), mload(reason))
-                    }
+        try IERC721Receiver(to).onERC721Received(_msgSender(), from, tokenId, _data) returns (bytes4 retval) {
+            return retval == IERC721Receiver(to).onERC721Received.selector;
+        } catch (bytes memory reason) {
+            if (reason.length == 0) {
+                revert TransferToNonERC721ReceiverImplementer();
+            } else {
+                assembly {
+                    revert(add(32, reason), mload(reason))
                 }
             }
-        } else {
-            return true;
         }
     }
 
