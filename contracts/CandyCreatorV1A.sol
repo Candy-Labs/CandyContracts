@@ -34,9 +34,10 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import '@openzeppelin/contracts/utils/Strings.sol';
 import "./token/ERC721/ERC721A.sol";
-import "./access/Ownable.sol";
 import "./eip/2981/ERC2981Collection.sol";
+import "./access/Ownable.sol";
 import "./modules/PaymentSplitter.sol";
 
 contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, PaymentSplitter, Ownable {
@@ -49,6 +50,7 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
   uint256 private mintPrice;
   uint256 private mintSize;
   uint256 private revealTime;
+  string private placeholderURI;
 
   // @notice Whitelist functionality 
   bool private whitelistActive;
@@ -79,7 +81,8 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
               bool _multi,
               address [] memory splitAddresses,
               uint256 [] memory splitShares) 
-              ERC721A(name, symbol, _placeholderURI) {
+              ERC721A(name, symbol) {
+                placeholderURI = _placeholderURI;
                 setMintPrice(_mintPrice);
                 setMintSize(_mintSize);
                 addPayee(_candyWallet, 500);
@@ -356,15 +359,27 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
  *    ░╚════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝╚═════╝░╚══════╝
  */
 
-  // @notice solidity required override for _baseURI(), if you wish to
+  // @notice Solidity required override for _baseURI(), if you wish to
   //  be able to set from API -> IPFS or vice versa using setBaseURI(string)
   function _baseURI() internal view override returns (string memory) {
     return base;
   }
 
+  // @notice Override for ERC721A _startTokenId to change from default 0 -> 1
+  function _startTokenId() internal view override returns (uint256) {
+    return 1;
+  }
+
+  // @notice Override for ERC721A tokenURI
+  function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+    require(!_exists(tokenId), "Token does not exist");
+    string memory baseURI = _baseURI();
+    return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, "/", Strings.toString(tokenId), ".json")) : placeholderURI;
+  }
+
   // @notice solidity required override for supportsInterface(bytes4)
   // @param bytes4 interfaceId - bytes4 id per interface or contract
-  //  calculated by ERC165 standards automatically
+  // calculated by ERC165 standards automatically
   function supportsInterface(bytes4 interfaceId) public view override(ERC721A, IERC165) returns (bool) {
     return (
       interfaceId == type(ERC2981Collection).interfaceId  ||
