@@ -33,14 +33,13 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import '@openzeppelin/contracts/utils/Strings.sol';
 import "./token/ERC721/ERC721A.sol";
 import "./eip/2981/ERC2981Collection.sol";
 import "./access/Ownable.sol";
 import "./modules/PaymentSplitter.sol";
 
-contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, PaymentSplitter, Ownable {
+contract CandyCreatorV1A is ERC721A, ERC2981Collection, PaymentSplitter, Ownable {
   
   // @notice basic state variables
   string private base;
@@ -108,9 +107,8 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
 
   // @notice this is the mint function, mint Fees in ERC20,
   //  requires amount * mintPrice to be sent by caller
-  //  nonReentrant() function. More comments within code.
   // @param uint amount - number of tokens minted
-  function whitelistMint(bytes32[] calldata merkleProof, uint64 amount) external payable nonReentrant() {
+  function whitelistMint(bytes32[] calldata merkleProof, uint64 amount) external payable {
     // @notice using Checks-Effects-Interactions
     require(mintingActive, "Minting not enabled");
     require(whitelistActive, "Whitelist not required, use publicMint()");
@@ -133,9 +131,8 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
 
   // @notice this is the mint function, mint Fees in ERC20,
   //  requires amount * mintPrice to be sent by caller
-  //  nonReentrant() function. More comments within code.
   // @param uint amount - number of tokens minted
-  function publicMint(uint256 amount) external payable nonReentrant() {
+  function publicMint(uint256 amount) external payable {
     require(!whitelistActive, "publicMint() disabled because whitelist is enabled");
     require(mintingActive, "Minting not enabled");
     require(_msgValue() == mintPrice * amount, "Wrong amount of Native Token");
@@ -383,7 +380,6 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, ReentrancyGuard, Payment
   function supportsInterface(bytes4 interfaceId) public view override(ERC721A, IERC165) returns (bool) {
     return (
       interfaceId == type(ERC2981Collection).interfaceId  ||
-      interfaceId == type(ReentrancyGuard).interfaceId ||
       interfaceId == type(PaymentSplitter).interfaceId ||
       interfaceId == type(Ownable).interfaceId ||
       super.supportsInterface(interfaceId)
