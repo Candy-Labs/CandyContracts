@@ -17,7 +17,7 @@ Open-source NFT contract implementations for everyone! Used by the [Candy Chain 
 
 ## Security 
 * Access Control 
-* Re-entrancy Guard
+* Re-entrancy safe mint functions
 
 ## Testing / Auditing 
 To start using these contracts with [Hardhat](https://hardhat.org/) simply run the following commands:
