@@ -6,7 +6,7 @@
  *    ╚█████╔╝██║░░██║██║░╚███║██████╔╝░░░██║░░░  ╚█████╔╝██║░░██║███████╗██║░░██║░░░██║░░░╚█████╔╝██║░░██║
  *    ░╚════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░  ░╚════╝░╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝░░░╚═╝░░░░╚════╝░╚═╝░░╚═╝
  *
- *    Created by Alex Sikand, Chief Technology Officer of Candy Labs 
+ *    
  *
  *
  *  “Growing up, I slowly had this process of realizing that all the things around me that people had told me 

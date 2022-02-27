@@ -6,7 +6,7 @@
  *    ╚██████╗╚██████╔╝██║ ╚████║   ██║   ███████╗██╔╝ ██╗   ██║   
  *     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝   ╚═╝   
  * Re-write of @openzeppelin/contracts/utils/Context.sol
- * Rewritten by Alex Sikand, Chief Technology Officer @ Candy Labs
+ * 
  *
  * Upgraded stock contract with _msgValue() and _txOrigin() 
  */

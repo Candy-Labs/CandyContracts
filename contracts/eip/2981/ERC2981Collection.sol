@@ -13,7 +13,7 @@
  *    ╚██████╗╚██████╔╝███████╗███████╗███████╗╚██████╗   ██║   ██║╚██████╔╝██║ ╚████║
  *     ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚══════╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
  * 
- * Written by Alex Sikand, Chief Technology Officer @ Candy Labs.
+ * 
  *
  * Designed to allow setting a global royalty address along with specified basis points. 
  */

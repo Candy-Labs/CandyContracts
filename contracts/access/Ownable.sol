@@ -6,7 +6,7 @@
  *    ╚██████╔╝╚███╔███╔╝██║ ╚████║██║  ██║██████╔╝███████╗███████╗
  *     ╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝
  * Re-write of @openzeppelin/contracts/access/Ownable.sol
- * Rewritten by Alex Sikand, Chief Technology Officer @ Candy Labs
+ * 
  *
  * Upgraded to push/pull and decline compared to original contract
  */
