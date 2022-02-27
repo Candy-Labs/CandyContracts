@@ -13,7 +13,7 @@
  *    ███████║██║     ███████╗██║   ██║      ██║   ███████╗██║  ██║  
  *    ╚══════╝╚═╝     ╚══════╝╚═╝   ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝  
  * Re-write of @openzeppelin/contracts/finance/PaymentSplitter.sol
- * Rewritten by Alex Sikand, Chief Technology Officer @ Candy Labs
+ * 
  * 
  * Edits the release functionality to force release to all addresses added 
  * as payees.
