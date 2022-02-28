@@ -369,7 +369,7 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, PaymentSplitter, Ownable
 
   // @notice Override for ERC721A tokenURI
   function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-    require(!_exists(tokenId), "Token does not exist");
+    require(_exists(tokenId), "Token does not exist");
     string memory baseURI = _baseURI();
     return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, "/", Strings.toString(tokenId), ".json")) : placeholderURI;
   }
