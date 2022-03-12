@@ -79,11 +79,13 @@ contract CandyCreatorV1A is ERC721A, ERC2981Collection, PaymentSplitter, Ownable
               address _candyWallet,
               bool _multi,
               address [] memory splitAddresses,
-              uint256 [] memory splitShares) 
+              uint256 [] memory splitShares,
+              bytes32 _whitelistMerkleRoot) 
               ERC721A(name, symbol) {
                 placeholderURI = _placeholderURI;
                 setMintPrice(_mintPrice);
                 setMintSize(_mintSize);
+                setWhitelistMerkleRoot(_whitelistMerkleRoot);
                 addPayee(_candyWallet, 500);
                 if(!_multi) {
                   addPayee(_msgSender(), 9500);
