@@ -4,24 +4,24 @@ const { ethers } = require("hardhat");
 async function deploySingle() {
   const [owner, candyWallet, royalty1, royalty2] = await ethers.getSigners();
   const CandyCreatorFactory = await ethers.getContractFactory("CandyCreatorV1A");
-  const CandyCreator = await CandyCreatorFactory.deploy("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, false, [], []);
+  const CandyCreator = await CandyCreatorFactory.deploy("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, false, [], [], "0x0000000000000000000000000000000000000000000000000000000000000000");
   await CandyCreator.deployed();
-  return {contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2}; 
+  return { contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2 };
 }
 
 async function deployMulti() {
   const [owner, candyWallet, royalty1, royalty2] = await ethers.getSigners();
   const CandyCreatorFactory = await ethers.getContractFactory("CandyCreatorV1A");
-  const CandyCreator = await CandyCreatorFactory.deploy("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, true, [owner.address, royalty1.address], [5000, 4500]);
+  const CandyCreator = await CandyCreatorFactory.deploy("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, true, [owner.address, royalty1.address], [5000, 4500], "0x0000000000000000000000000000000000000000000000000000000000000000");
   await CandyCreator.deployed();
-  return {contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2}; 
+  return { contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2 };
 }
 
 describe("Public Minting", function () {
 
-  it("Public Minting Disabled on Initialization", async function() {
+  it("Public Minting Disabled on Initialization", async function () {
     const deployment = await deployMulti()
-    CandyCreator = deployment.contract 
+    CandyCreator = deployment.contract
 
     // Mint status should report false
     const mintStatus = await CandyCreator.mintStatus()
@@ -29,20 +29,20 @@ describe("Public Minting", function () {
 
     // Get the minting fee
     const fee = await CandyCreator.connect(deployment.owner)
-    .mintingFee()
+      .mintingFee()
 
     // Attempting to mint should rever
     await expect(CandyCreator.connect(deployment.owner)
-    .publicMint(1, {
-      value: fee
-    }))
-    .to.be.revertedWith("Minting not enabled");
+      .publicMint(1, {
+        value: fee
+      }))
+      .to.be.revertedWith("Minting not enabled");
 
   });
 
-  it("Enable Minting", async function() {
+  it("Enable Minting", async function () {
     const deployment = await deployMulti()
-    CandyCreator = deployment.contract 
+    CandyCreator = deployment.contract
 
     // Mint status should report false
     const oldStatus = await CandyCreator.mintStatus()
@@ -50,7 +50,7 @@ describe("Public Minting", function () {
 
     // Enable minting
     await CandyCreator.connect(deployment.owner)
-    .enableMinting()
+      .enableMinting()
 
     // Mint status should report true
     const newStatus = await CandyCreator.mintStatus()
@@ -58,13 +58,13 @@ describe("Public Minting", function () {
 
   });
 
-  it("Disable Minting", async function() {
+  it("Disable Minting", async function () {
     const deployment = await deployMulti()
-    CandyCreator = deployment.contract 
+    CandyCreator = deployment.contract
 
-     // Enable minting
-     await CandyCreator.connect(deployment.owner)
-     .enableMinting()
+    // Enable minting
+    await CandyCreator.connect(deployment.owner)
+      .enableMinting()
 
     // Mint status should report true
     const oldStatus = await CandyCreator.mintStatus()
@@ -72,7 +72,7 @@ describe("Public Minting", function () {
 
     // Enable minting
     await CandyCreator.connect(deployment.owner)
-    .disableMinting()
+      .disableMinting()
 
     // Mint status should report false
     const newStatus = await CandyCreator.mintStatus()
@@ -81,44 +81,44 @@ describe("Public Minting", function () {
   });
 
 
-  it("Public Minting Requires Correct Payment", async function() {
+  it("Public Minting Requires Correct Payment", async function () {
     const deployment = await deployMulti()
-    CandyCreator = deployment.contract 
+    CandyCreator = deployment.contract
 
     // Enable minting
     await CandyCreator.connect(deployment.owner)
-    .enableMinting()
+      .enableMinting()
 
     // Get the minting fee
     const fee = await CandyCreator.connect(deployment.owner)
-    .mintingFee()
+      .mintingFee()
 
     // Must send the correct amount of token 
     let badFee = 999
 
     await expect(CandyCreator.connect(deployment.owner)
-    .publicMint(1, {
-      value: badFee
-    }))
-    .to.be.revertedWith("Wrong amount of Native Token");
+      .publicMint(1, {
+        value: badFee
+      }))
+      .to.be.revertedWith("Wrong amount of Native Token");
 
   });
 
-  it("Public Minting Respects Max Limit", async function() {
+  it("Public Minting Respects Max Limit", async function () {
     const deployment = await deployMulti()
-    CandyCreator = deployment.contract 
+    CandyCreator = deployment.contract
 
     // Get the minting fee
     const fee = await CandyCreator.connect(deployment.owner)
-    .mintingFee()
+      .mintingFee()
 
     // Enable minting
     await CandyCreator.connect(deployment.owner)
-    .enableMinting()
-  
+      .enableMinting()
+
     // Set a maximum number of public mints
     await CandyCreator.connect(deployment.owner)
-    .setMaxPublicMints(2)
+      .setMaxPublicMints(2)
 
     // Valid number of tokens to mint in a public transaction 
     let okNumber = 2
@@ -128,48 +128,48 @@ describe("Public Minting", function () {
 
     // Mint 1 token
     await CandyCreator.connect(deployment.owner)
-    .publicMint(1, {
-      value: (1*fee).toString()
-    });
+      .publicMint(1, {
+        value: (1 * fee).toString()
+      });
 
     // Mint 2 tokens 
     await CandyCreator.connect(deployment.owner)
-    .publicMint(okNumber, {
-      value: (okNumber*fee).toString()
-    });
+      .publicMint(okNumber, {
+        value: (okNumber * fee).toString()
+      });
 
     // You should not be allowed to mint more than the max public 
     // mint limit
     await expect(CandyCreator.connect(deployment.owner)
-    .publicMint(badNumber, {
-      value: (badNumber*fee).toString()
-    }))
-    .to.be.revertedWith("Exceeds public transaction limit");
+      .publicMint(badNumber, {
+        value: (badNumber * fee).toString()
+      }))
+      .to.be.revertedWith("Exceeds public transaction limit");
 
   });
 
-  it("Public Minting Disabled when Whitelist Enabled", async function() {
+  it("Public Minting Disabled when Whitelist Enabled", async function () {
     const deployment = await deployMulti()
-    CandyCreator = deployment.contract 
+    CandyCreator = deployment.contract
 
     // Enable whitelist
     await CandyCreator.connect(deployment.owner)
-    .enableWhitelist()
+      .enableWhitelist()
 
     // Enable minting
     await CandyCreator.connect(deployment.owner)
-    .enableMinting()
+      .enableMinting()
 
     // Get the minting fee
     const fee = await CandyCreator.connect(deployment.owner)
-    .mintingFee()
-    
+      .mintingFee()
+
     await expect(CandyCreator.connect(deployment.owner)
-    .publicMint(1, {
-      value: 1 * fee
-    }))
-    .to.be.revertedWith("publicMint() disabled because whitelist is enabled");
+      .publicMint(1, {
+        value: 1 * fee
+      }))
+      .to.be.revertedWith("publicMint() disabled because whitelist is enabled");
 
   });
- 
+
 });
