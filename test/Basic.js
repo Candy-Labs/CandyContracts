@@ -4,25 +4,25 @@ const { ethers } = require("hardhat");
 async function deploySingle() {
   const [owner, candyWallet, royalty1, royalty2] = await ethers.getSigners();
   const CandyCreatorFactory = await ethers.getContractFactory("CandyCreatorV1A");
-  const CandyCreator = await CandyCreatorFactory.deploy("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, false, [], []);
+  const CandyCreator = await CandyCreatorFactory.deploy("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, false, [], [], "0x0000000000000000000000000000000000000000000000000000000000000000");
   await CandyCreator.deployed();
-  return {contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2}; 
+  return { contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2 };
 }
 
 async function deployMulti() {
   const [owner, candyWallet, royalty1, royalty2] = await ethers.getSigners();
   const CandyCreatorFactory = await ethers.getContractFactory("CandyCreatorV1A");
-  const CandyCreator = await CandyCreatorFactory.deploy("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, true, [owner.address, royalty1.address], [5000, 4500]);
+  const CandyCreator = await CandyCreatorFactory.deploy("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, true, [owner.address, royalty1.address], [5000, 4500], "0x0000000000000000000000000000000000000000000000000000000000000000");
   await CandyCreator.deployed();
-  return {contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2}; 
+  return { contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2 };
 }
 
 describe("Basic Tests", function () {
 
   it("Single Creator Deployment", async function () {
-    
+
     const deployment = await deploySingle()
-    CandyCreator = deployment.contract 
+    CandyCreator = deployment.contract
 
     // Ensure the candyWallet address is the first payee in list
     const payee0 = await CandyCreator.payee(0)
@@ -44,9 +44,9 @@ describe("Basic Tests", function () {
   });
 
   it("Multiple Creator Deployment", async function () {
-    
+
     const deployment = await deployMulti()
-    CandyCreator = deployment.contract 
+    CandyCreator = deployment.contract
 
     // Ensure the candyWallet address is the first payee in list
     const payee0 = await CandyCreator.payee(0)
@@ -71,5 +71,5 @@ describe("Basic Tests", function () {
     expect(whitelistStatus).to.equal(false)
 
   });
- 
+
 });
