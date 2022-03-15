@@ -36,7 +36,7 @@ describe("Public Minting", function () {
       .publicMint(1, {
         value: fee
       }))
-      .to.be.revertedWith("Minting not enabled");
+      .to.be.revertedWith('MintingNotActive()');
 
   });
 
@@ -100,7 +100,7 @@ describe("Public Minting", function () {
       .publicMint(1, {
         value: badFee
       }))
-      .to.be.revertedWith("Wrong amount of Native Token");
+      .to.be.revertedWith('WrongPayment()');
 
   });
 
@@ -144,7 +144,7 @@ describe("Public Minting", function () {
       .publicMint(badNumber, {
         value: (badNumber * fee).toString()
       }))
-      .to.be.revertedWith("Exceeds public transaction limit");
+      .to.be.revertedWith('ExceedsMaxTransactionMints');
 
   });
 
@@ -168,7 +168,7 @@ describe("Public Minting", function () {
       .publicMint(1, {
         value: 1 * fee
       }))
-      .to.be.revertedWith("publicMint() disabled because whitelist is enabled");
+      .to.be.revertedWith('WhitelistRequired()');
 
   });
 
