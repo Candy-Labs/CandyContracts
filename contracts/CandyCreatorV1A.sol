@@ -41,15 +41,16 @@ import "./access/Ownable.sol";
 import "./modules/PaymentSplitter.sol";
 
 error MintingNotActive();
+error MintingActive();
 error WouldExceedMintSize();
-error WhitelistNotRequired();
-error WrongPayment();
-error ExceedsMaxWhitelistMints();
-error NotWhitelisted();
-error NotEnoughWhitelistSlots();
-error WhitelistRequired();
 error ExceedsMaxTransactionMints();
 error NonExistentToken();
+error WhitelistNotRequired();
+error WhitelistRequired();
+error NotWhitelisted();
+error NotEnoughWhitelistSlots();
+error ExceedsMaxWhitelistMints();
+error WrongPayment();
 
 contract CandyCreatorV1A is
     ERC721A,
@@ -245,6 +246,7 @@ contract CandyCreatorV1A is
 
     // @notice this will enable publicMint()
     function enableMinting() external onlyOwner {
+        if (mintingActive) revert MintingActive();
         bool old = mintingActive;
         mintingActive = true;
         emit UpdatedMintStatus(old, mintingActive);
@@ -252,6 +254,7 @@ contract CandyCreatorV1A is
 
     // @notice this will disable publicMint()
     function disableMinting() external onlyOwner {
+        if (!mintingActive) revert MintingNotActive();
         bool old = mintingActive;
         mintingActive = false;
         emit UpdatedMintStatus(old, mintingActive);
@@ -259,6 +262,7 @@ contract CandyCreatorV1A is
 
     // @notice this will enable whitelist or "if" in publicMint()
     function enableWhitelist() public onlyOwner {
+        if (whitelistActive) revert WhitelistRequired();
         bool old = whitelistActive;
         whitelistActive = true;
         emit UpdatedWhitelistStatus(old, whitelistActive);
@@ -266,6 +270,7 @@ contract CandyCreatorV1A is
 
     // @notice this will disable whitelist or "else" in publicMint()
     function disableWhitelist() external onlyOwner {
+        if (!whitelistActive) revert WhitelistNotRequired();
         bool old = whitelistActive;
         whitelistActive = false;
         emit UpdatedWhitelistStatus(old, whitelistActive);

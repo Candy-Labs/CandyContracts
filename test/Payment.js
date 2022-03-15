@@ -96,11 +96,11 @@ describe("Payment", function () {
 
     // Enable minting THIS SHOULD SAY MINTING IS ALREADY ENABLED
     await expect(CandyCreator.connect(deployment.owner)
-      .enableMinting())
+      .enableMinting()).to.be.revertedWith("MintingActive()")
 
     await expect(CandyCreator.connect(deployment.owner)
       .release())
-      .to.be.revertedWith("Contract must have a balance to release funds")
+      .to.be.revertedWith('ZeroBalance()')
 
   });
 
@@ -115,7 +115,7 @@ describe("Payment", function () {
 
     await expect(CandyCreator.connect(deployment.owner)
       .release())
-      .to.be.revertedWith("Contract must have a balance to release funds")
+      .to.be.revertedWith('ZeroBalance()')
 
     const totalShares = await CandyCreator.totalShares()
     const ownerShares = await CandyCreator.shares(deployment.owner.address)
