@@ -18,6 +18,7 @@
  *
  *
  * Version: VARIANT_BASE_NOTPROV_NOTAIRDROP_ERC721A_NOTENUMERABLE_CONTEXTV2
+ *          v1.1
  *
  * Purpose: ERC-721 template for no-code users.
  *          Placeholder for pre-reveal information.
@@ -63,7 +64,6 @@ contract CandyCreatorV1A is
     uint256 private maxPublicMints;
     uint256 private mintPrice;
     uint256 private mintSize;
-    uint256 private revealTime;
     string private placeholderURI;
 
     // @notice Whitelist functionality
@@ -71,7 +71,6 @@ contract CandyCreatorV1A is
     bytes32 public whitelistMerkleRoot;
     uint64 private maxWhitelistMints;
 
-    event UpdatedRevealTimestamp(uint256 _old, uint256 _new);
     event UpdatedMintPrice(uint256 _old, uint256 _new);
     event UpdatedMintSize(uint256 _old, uint256 _new);
     event UpdatedMaxWhitelistMints(uint256 _old, uint256 _new);
@@ -316,15 +315,6 @@ contract CandyCreatorV1A is
         emit UpdatedMintSize(old, mintSize);
     }
 
-    // @notice this will set the reveal timestamp
-    // This is more for your API and not on-chain...
-    // @param uint256 _time - uinx time stamp for reveal (use with API's only)
-    function setRevealTimestamp(uint256 _timestamp) public onlyOwner {
-        uint256 old = revealTime;
-        revealTime = _timestamp;
-        emit UpdatedRevealTimestamp(old, revealTime);
-    }
-
     /***
      *    ██████╗░██╗░░░██╗██████╗░██╗░░░░░██╗░█████╗░  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
      *    ██╔══██╗██║░░░██║██╔══██╗██║░░░░░██║██╔══██╗  ██║░░░██║██║██╔════╝░██║░░██╗░░██║██╔════╝
@@ -341,12 +331,6 @@ contract CandyCreatorV1A is
     // @notice will return whitelist status of Minter
     function whitelistStatus() external view returns (bool) {
         return whitelistActive;
-    }
-
-    // @notice will return the reveal timestamp for use by off-chain API to conditionally render
-    // mint button
-    function revealTimestamp() external view returns (uint256) {
-        return revealTime;
     }
 
     // @notice will return minting fees
