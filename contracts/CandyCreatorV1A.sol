@@ -18,7 +18,7 @@
  *
  *
  * Version: VARIANT_BASE_NOTPROV_NOTAIRDROP_ERC721A_NOTENUMERABLE_CONTEXTV2
- *          v1.1
+ *          v2.0
  *
  * Purpose: ERC-721 template for no-code users.
  *          Placeholder for pre-reveal information.
