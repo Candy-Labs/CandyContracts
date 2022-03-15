@@ -30,7 +30,7 @@
 
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity >=0.8.4 <0.9.0;
 
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -151,7 +151,7 @@ contract CandyCreatorV1A is
         uint64 numWhitelistMinted = _getAux(_msgSender()) + amount;
         if (numWhitelistMinted > maxWhitelistMints)
             revert NotEnoughWhitelistSlots();
-        _mint(_msgSender(), amount, "", false);
+        _safeMint(_msgSender(), amount);
         _setAux(_msgSender(), numWhitelistMinted);
     }
 
@@ -164,7 +164,7 @@ contract CandyCreatorV1A is
         if (_msgValue() != mintPrice * amount) revert WrongPayment();
         if (totalSupply() + amount > mintSize) revert WouldExceedMintSize();
         if (amount > maxPublicMints) revert ExceedsMaxTransactionMints();
-        _mint(_msgSender(), amount, "", false);
+        _safeMint(_msgSender(), amount);
     }
 
     /***
@@ -391,7 +391,7 @@ contract CandyCreatorV1A is
     }
 
     // @notice Override for ERC721A _startTokenId to change from default 0 -> 1
-    function _startTokenId() internal view override returns (uint256) {
+    function _startTokenId() internal pure override returns (uint256) {
         return 1;
     }
 
