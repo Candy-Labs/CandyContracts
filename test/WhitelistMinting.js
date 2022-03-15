@@ -19,6 +19,21 @@ async function deployMulti() {
   return { contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2 };
 }
 
+async function deployWithWhitelist() {
+  const [owner, candyWallet, royalty1, royalty2] = await ethers.getSigners();
+  const CandyCreatorFactory = await ethers.getContractFactory("CandyCreatorV1A");
+  // Generate a new whitelist root hash (only whitelisted address is the user)
+  const addresses = [owner.address]
+  const hashedAddresses = addresses.map(addr => keccak256(addr));
+  const merkleTree = new MerkleTree(hashedAddresses, keccak256, { sortPairs: true });
+  const rootHash = "0x" + merkleTree.getRoot().toString('hex');
+  const CandyCreator = await CandyCreatorFactory.deploy("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, true, [owner.address, royalty1.address], [5000, 4500], rootHash);
+  await CandyCreator.deployed();
+  return { contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2, merkleTree: merkleTree };
+}
+
+
+
 describe("Whitelist Minting", function () {
 
   it("Generate and Set Whitelist", async function () {
@@ -272,6 +287,41 @@ describe("Whitelist Minting", function () {
 
   });
 
+  it("Pass Whitelist Merkle Root in Constructor", async function () {
+    const deployment = await deployWithWhitelist()
+
+    CandyCreator = deployment.contract
+
+    // Enable whitelist 
+    await CandyCreator.connect(deployment.owner)
+      .enableWhitelist()
+
+    // Enable minting
+    await CandyCreator.connect(deployment.owner)
+      .enableMinting()
+
+    // Generate proof for Owner 
+    const hashedOwner = keccak256(deployment.owner.address);
+    const ownerProof = deployment.merkleTree.getHexProof(hashedOwner);
+
+    // Generate proof for CandyWallet
+    const hashedCandy = keccak256(deployment.candyWallet.address);
+    const candyProof = deployment.merkleTree.getHexProof(hashedCandy);
+
+    // Attempt to mint a token 
+    // Get the minting fee
+    const fee = await CandyCreator.connect(deployment.owner)
+      .mintingFee()
+
+    // Owner proof should be valid
+    await expect(CandyCreator.connect(deployment.owner)
+      .whitelistMint(ownerProof, 1, {
+        value: fee
+      }))
+
+
+  });
+
 
   it("1,000 Collection Minting", async function () {
     const deployment = await deployMulti()
@@ -332,7 +382,11 @@ describe("Whitelist Minting", function () {
 
 
 
+
+
   });
+
+
 
 
 
