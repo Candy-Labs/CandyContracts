@@ -292,10 +292,6 @@ describe("Whitelist Minting", function () {
 
     CandyCreator = deployment.contract
 
-    // Enable whitelist 
-    await CandyCreator.connect(deployment.owner)
-      .enableWhitelist()
-
     // Enable minting
     await CandyCreator.connect(deployment.owner)
       .enableMinting()
