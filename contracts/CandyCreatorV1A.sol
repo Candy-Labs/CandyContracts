@@ -51,6 +51,7 @@ error NotWhitelisted();
 error NotEnoughWhitelistSlots();
 error ExceedsMaxWhitelistMints();
 error WrongPayment();
+error InvalidMintSize();
 
 contract CandyCreatorV1A is
     ERC721A,
@@ -99,8 +100,8 @@ contract CandyCreatorV1A is
         bytes32 _whitelistMerkleRoot
     ) ERC721A(name, symbol) {
         placeholderURI = _placeholderURI;
-        maxPublicMints = 1;
-        maxWhitelistMints = 1;
+        setMaxWhitelistMints(2);
+        setMaxPublicMints(2);
         setMintPrice(_mintPrice);
         setMintSize(_mintSize);
         if (_whitelistMerkleRoot != 0) {
@@ -315,6 +316,7 @@ contract CandyCreatorV1A is
     // @notice will set mint size by owner role
     // @param uint256 _amount - set number to mint
     function setMintSize(uint256 _amount) public onlyOwner {
+        if (_amount < totalSupply()) revert InvalidMintSize();
         uint256 old = mintSize;
         mintSize = _amount;
         emit UpdatedMintSize(old, mintSize);
