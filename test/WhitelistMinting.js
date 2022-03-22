@@ -177,8 +177,8 @@ describe("Whitelist Minting", function () {
 
     // Owner proof should be valid
     await expect(CandyCreator.connect(deployment.owner)
-      .whitelistMint(ownerProof, 1, {
-        value: fee
+      .whitelistMint(ownerProof, 2, {
+        value: fee * 2
       }))
 
     // Should not be able to mint off whitelist again 
@@ -228,8 +228,8 @@ describe("Whitelist Minting", function () {
 
     // Should not be able to mint off whitelist again 
     await expect(CandyCreator.connect(deployment.owner)
-      .whitelistMint(ownerProof, 2, {
-        value: fee * 2
+      .whitelistMint(ownerProof, 3, {
+        value: fee * 3
       })).to.be.revertedWith('ExceedsMaxWhitelistMints()')
 
   });
