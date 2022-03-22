@@ -100,14 +100,16 @@ contract CandyCreatorV1A is
         bytes32 _whitelistMerkleRoot
     ) ERC721A(name, symbol) {
         placeholderURI = _placeholderURI;
-        setMaxWhitelistMints(2);
-        setMaxPublicMints(2);
-        setMintPrice(_mintPrice);
-        setMintSize(_mintSize);
+        maxWhitelistMints = 2;
+        maxPublicMints = 2;
+        mintPrice = _mintPrice;
+        mintSize = _mintSize;
+        
         if (_whitelistMerkleRoot != 0) {
-            setWhitelistMerkleRoot(_whitelistMerkleRoot);
+            whitelistMerkleRoot = _whitelistMerkleRoot;
             enableWhitelist();
         }
+        
         addPayee(_candyWallet, 500);
         if (!_multi) {
             addPayee(_msgSender(), 9500);
