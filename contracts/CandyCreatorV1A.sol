@@ -33,11 +33,12 @@
 
 pragma solidity >=0.8.4 <0.9.0;
 
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "./token/ERC721/ERC721A.sol";
+import "./@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "./@openzeppelin/contracts/governance/utils/Votes.sol";
+import "./@openzeppelin/contracts/utils/Strings.sol";
+import "./@openzeppelin/contracts/access/Ownable.sol";
+import "./token/ERC721A.sol";
 import "./eip/2981/ERC2981Collection.sol";
-import "./access/Ownable.sol";
 import "./modules/PaymentSplitter.sol";
 
 error MintingNotActive();
@@ -55,6 +56,7 @@ error InvalidMintSize();
 
 contract CandyCreatorV1A is
     ERC721A,
+    Votes,
     ERC2981Collection,
     PaymentSplitter,
     Ownable
@@ -98,7 +100,7 @@ contract CandyCreatorV1A is
         address[] memory splitAddresses,
         uint256[] memory splitShares,
         bytes32 _whitelistMerkleRoot
-    ) ERC721A(name, symbol) {
+    ) EIP712("Test", "TestV1") ERC721A(name, symbol) {
         placeholderURI = _placeholderURI;
         maxWhitelistMints = 2;
         maxPublicMints = 2;
@@ -410,6 +412,25 @@ contract CandyCreatorV1A is
                 )
                 : placeholderURI;
     }
+
+   
+    function _afterTokenTransfers(
+        address from,
+        address to,
+        uint256 startTokenId,
+        uint256 quantity
+    ) internal override {
+        _transferVotingUnits(from, to, quantity);
+        super._afterTokenTransfers(from, to, startTokenId, quantity);
+    }
+
+    
+
+    function _getVotingUnits(address account) internal view override returns (uint256) {
+        return balanceOf(account);
+    }
+    
+    
 
     // @notice solidity required override for supportsInterface(bytes4)
     // @param bytes4 interfaceId - bytes4 id per interface or contract

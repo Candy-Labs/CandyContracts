@@ -29,7 +29,7 @@ describe("Owner Permissions", function () {
     await expect(
       CandyCreator.connect(deployment.candyWallet)
         .enableMinting()
-    ).to.be.revertedWith("Owner: caller is not the Owner");
+    ).to.be.revertedWith("Ownable: caller is not the owner");
 
     await CandyCreator.connect(deployment.owner)
       .enableMinting()
@@ -49,7 +49,7 @@ describe("Owner Permissions", function () {
     await expect(
       CandyCreator.connect(deployment.candyWallet)
         .enableWhitelist()
-    ).to.be.revertedWith("Owner: caller is not the Owner");
+    ).to.be.revertedWith("Ownable: caller is not the owner");
 
     await CandyCreator.connect(deployment.owner)
       .enableWhitelist()
@@ -78,7 +78,7 @@ describe("Owner Permissions", function () {
       });
 
     await expect(CandyCreator.connect(deployment.candyWallet).release())
-      .to.be.revertedWith("Owner: caller is not the Owner");
+      .to.be.revertedWith("Ownable: caller is not the owner");
 
     await CandyCreator.connect(deployment.owner).release()
 
@@ -94,7 +94,7 @@ describe("Owner Permissions", function () {
     await expect(
       CandyCreator.connect(deployment.candyWallet)
         .setMintPrice(newFee)
-    ).to.be.revertedWith("Owner: caller is not the Owner");
+    ).to.be.revertedWith("Ownable: caller is not the owner");
 
     await CandyCreator.connect(deployment.owner)
       .setMintPrice(newFee)
@@ -114,7 +114,7 @@ describe("Owner Permissions", function () {
     await expect(
       CandyCreator.connect(deployment.candyWallet)
         .setMintSize(newSize)
-    ).to.be.revertedWith("Owner: caller is not the Owner");
+    ).to.be.revertedWith("Ownable: caller is not the owner");
 
     await CandyCreator.connect(deployment.owner)
       .setMintSize(newSize)

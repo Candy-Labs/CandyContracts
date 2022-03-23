@@ -3,13 +3,13 @@
 
 pragma solidity ^0.8.4;
 
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
-import '@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
-import '@openzeppelin/contracts/utils/Strings.sol';
-import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
-import "../../utils/Context.sol";
+import '../@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import '../@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
+import '../@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol';
+import '../@openzeppelin/contracts/utils/Address.sol';
+import '../@openzeppelin/contracts/utils/Strings.sol';
+import '../@openzeppelin/contracts/utils/introspection/ERC165.sol';
+import "../@openzeppelin/contracts/utils/Context.sol";
 
 error ApprovalCallerNotOwnerNorApproved();
 error ApprovalQueryForNonexistentToken();

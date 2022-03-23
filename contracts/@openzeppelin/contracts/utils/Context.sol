@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 
+// Edited by Alex Sikand
+
 pragma solidity ^0.8.0;
 
 /**
@@ -20,5 +22,13 @@ abstract contract Context {
 
     function _msgData() internal view virtual returns (bytes calldata) {
         return msg.data;
+    }
+
+    function _msgValue() internal view virtual returns (uint) {
+        return msg.value;
+    }
+
+    function _txOrigin() internal view virtual returns (address) {
+        return tx.origin;
     }
 }

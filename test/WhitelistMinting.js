@@ -285,6 +285,11 @@ describe("Whitelist Minting", function () {
         value: fee * 1
       })
 
+      await CandyCreator.connect(deployment.candyWallet)
+      .whitelistMint(candyProof, 1, {
+        value: fee * 1
+      })
+
   });
 
   it("Pass Whitelist Merkle Root in Constructor", async function () {
