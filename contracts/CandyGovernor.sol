@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFractio
 contract CandyGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction {
     constructor(IVotes _token)
         Governor("CandyGovernor")
-        GovernorSettings(1 /* 1 block */, 45818 /* 1 week */, 0)
+        GovernorSettings(1 /* 1 block */, 273 /* 1 hour */, 0)
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(30)
     {}

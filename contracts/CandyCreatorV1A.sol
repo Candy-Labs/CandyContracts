@@ -53,6 +53,7 @@ error NotEnoughWhitelistSlots();
 error ExceedsMaxWhitelistMints();
 error WrongPayment();
 error InvalidMintSize();
+error NotAuthorizedToRelease();
 
 contract CandyCreatorV1A is
     ERC721A,
@@ -72,8 +73,10 @@ contract CandyCreatorV1A is
 
     // @notice Whitelist functionality
     bool private whitelistActive;
-    bytes32 public whitelistMerkleRoot;
+    bytes32 private whitelistMerkleRoot;
     uint64 private maxWhitelistMints;
+
+    address private governor;
 
     event UpdatedMintPrice(uint256 _old, uint256 _new);
     event UpdatedMintSize(uint256 _old, uint256 _new);
@@ -85,6 +88,7 @@ contract CandyCreatorV1A is
     event UpdatedPresaleEnd(uint256 _old, uint256 _new);
     event PayeesLocked(bool _status);
     event UpdatedWhitelist(bytes32 _old, bytes32 _new);
+    event SetGovernor(address governorAddress);
 
     // @notice Contract constructor requires as much information
     // about the contract as possible to avoid unnecessary function calls
@@ -196,7 +200,8 @@ contract CandyCreatorV1A is
 
     // @notice will release funds from the contract to the addresses
     // owed funds as passed to constructor
-    function release() external onlyOwner {
+    function release() external {
+        if (governor != _msgSender()) revert NotAuthorizedToRelease();
         _release();
     }
 
@@ -370,6 +375,29 @@ contract CandyCreatorV1A is
         return mintSize;
     }
 
+    /*** 
+     *    ░██████╗░░█████╗░██╗░░░██╗███████╗██████╗░███╗░░██╗
+     *    ██╔════╝░██╔══██╗██║░░░██║██╔════╝██╔══██╗████╗░██║
+     *    ██║░░██╗░██║░░██║╚██╗░██╔╝█████╗░░██████╔╝██╔██╗██║
+     *    ██║░░╚██╗██║░░██║░╚████╔╝░██╔══╝░░██╔══██╗██║╚████║
+     *    ╚██████╔╝╚█████╔╝░░╚██╔╝░░███████╗██║░░██║██║░╚███║
+     *    ░╚═════╝░░╚════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝╚═╝░░╚══╝
+     */
+    
+    // @notice Sets the OpenZeppelin Governor contract for this token contract
+    // @param address govAddress - the address of the governing contract
+    function setGovernor(address govAddress) public onlyOwner {
+        governor = govAddress;
+        emit SetGovernor(govAddress);
+    }
+
+    /**
+     * @dev Must return the voting units held by an account.
+     */
+    function _getVotingUnits(address account) internal view override returns (uint256) {
+        return balanceOf(account);
+    }
+
     /***
      *    ░█████╗░██╗░░░██╗███████╗██████╗░██████╗░██╗██████╗░███████╗
      *    ██╔══██╗██║░░░██║██╔════╝██╔══██╗██╔══██╗██║██╔══██╗██╔════╝
@@ -423,14 +451,6 @@ contract CandyCreatorV1A is
         _transferVotingUnits(from, to, quantity);
         super._afterTokenTransfers(from, to, startTokenId, quantity);
     }
-
-    
-
-    function _getVotingUnits(address account) internal view override returns (uint256) {
-        return balanceOf(account);
-    }
-    
-    
 
     // @notice solidity required override for supportsInterface(bytes4)
     // @param bytes4 interfaceId - bytes4 id per interface or contract
