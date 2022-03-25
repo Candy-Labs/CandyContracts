@@ -17,7 +17,7 @@
  *    ― Aaron Swartz (1986-2013)
  *
  *
- * Version: VARIANT_BASE_NOTPROV_NOTAIRDROP_ERC721A_NOTENUMERABLE_CONTEXTV2
+ * Version: VARIANT_BASE_GOVERNED
  *          v2.0
  *
  * Purpose: ERC-721 template for no-code users.
