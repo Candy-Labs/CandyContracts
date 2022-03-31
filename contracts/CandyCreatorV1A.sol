@@ -37,7 +37,7 @@ import "./@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./@openzeppelin/contracts/governance/utils/Votes.sol";
 import "./@openzeppelin/contracts/utils/Strings.sol";
 import "./@openzeppelin/contracts/access/Ownable.sol";
-import "./token/ERC721A.sol";
+import "./token/extensions/ERC721ABurnable.sol";
 import "./eip/2981/ERC2981Collection.sol";
 import "./modules/PaymentSplitter.sol";
 
@@ -54,9 +54,11 @@ error ExceedsMaxWhitelistMints();
 error WrongPayment();
 error InvalidMintSize();
 error NotAuthorizedToRelease();
+error NotTokenHolder();
+error RefundNotActive();
 
 contract CandyCreatorV1A is
-    ERC721A,
+    ERC721ABurnable,
     Votes,
     ERC2981Collection,
     PaymentSplitter,
@@ -66,6 +68,9 @@ contract CandyCreatorV1A is
     string private base;
     bool private mintingActive;
     bool private lockedPayees;
+    bool private refundActive;
+    uint256 private refundPrice;
+
     uint256 private maxPublicMints;
     uint256 private mintPrice;
     uint256 private mintSize;
@@ -89,6 +94,7 @@ contract CandyCreatorV1A is
     event PayeesLocked(bool _status);
     event UpdatedWhitelist(bytes32 _old, bytes32 _new);
     event SetGovernor(address governorAddress);
+    event RefundActivated(uint256 refundPrice);
 
     // @notice Contract constructor requires as much information
     // about the contract as possible to avoid unnecessary function calls
@@ -236,11 +242,48 @@ contract CandyCreatorV1A is
         _addPayee(newAddy, newShares);
     }
 
-    // @notice Will lock the ability to add further payees on PaymentSplitter.sol
+    // @notice will lock the ability to add further payees on PaymentSplitter.sol
     function lockPayees() private {
         require(!lockedPayees, "Can not set, payees locked");
         lockedPayees = true;
         emit PayeesLocked(lockedPayees);
+    }
+
+    // @dev Returns the tokenIds of the address. O(totalSupply) in complexity.
+    // Added to support the refund functionality.
+    function tokensOfOwner(address owner) internal view returns (uint256[] memory) {
+        unchecked {
+            uint256[] memory a = new uint256[](balanceOf(owner)); 
+            uint256 end = _currentIndex;
+            uint256 tokenIdsIdx;
+            address currOwnershipAddr;
+            for (uint256 i; i < end; i++) {
+                TokenOwnership memory ownership = _ownerships[i];
+                if (ownership.burned) {
+                    continue;
+                }
+                if (ownership.addr != address(0)) {
+                    currOwnershipAddr = ownership.addr;
+                }
+                if (currOwnershipAddr == owner) {
+                    a[tokenIdsIdx++] = i;
+                }
+            }
+            return a;    
+        }
+    }
+
+    // @notice will transfer the caller the refund amount they are owed
+    // the refund amount is (contractBalance / balanceOf)
+    function claimRefund() external {
+        uint256 holderBalance = balanceOf(_msgSender());
+        if (holderBalance == 0) revert NotTokenHolder();
+        if (!refundActive) revert RefundNotActive();
+        uint256[] memory ownedTokens = tokensOfOwner(_msgSender());
+        for (uint256 i; i < ownedTokens.length; i++) {
+            burn(ownedTokens[i]);
+        }
+        _releaseRefund(_msgSender(), refundPrice * holderBalance);
     }
 
     /***
@@ -375,6 +418,11 @@ contract CandyCreatorV1A is
         return mintSize;
     }
 
+    // @notice will return the refund status of the collection
+    function refundStatus() external view returns (bool) {
+        return refundActive;
+    }
+
     /*** 
      *    ░██████╗░░█████╗░██╗░░░██╗███████╗██████╗░███╗░░██╗
      *    ██╔════╝░██╔══██╗██║░░░██║██╔════╝██╔══██╗████╗░██║
@@ -396,6 +444,13 @@ contract CandyCreatorV1A is
      */
     function _getVotingUnits(address account) internal view override returns (uint256) {
         return balanceOf(account);
+    }
+
+    function activateRefund() external {
+        if (governor != _msgSender()) revert NotAuthorizedToRelease();
+        refundPrice = address(this).balance / totalSupply();
+        refundActive = true; 
+        emit RefundActivated(refundPrice);
     }
 
     /***
@@ -448,6 +503,7 @@ contract CandyCreatorV1A is
         uint256 startTokenId,
         uint256 quantity
     ) internal override {
+        // For governance (See Votes.sol)
         _transferVotingUnits(from, to, quantity);
         super._afterTokenTransfers(from, to, startTokenId, quantity);
     }

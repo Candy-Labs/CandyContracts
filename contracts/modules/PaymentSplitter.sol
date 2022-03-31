@@ -53,6 +53,7 @@ abstract contract PaymentSplitter is Context {
     event PayeeAdded(address account, uint256 shares);
     event PaymentReleased(address to, uint256 amount);
     event PaymentReceived(address from, uint256 amount);
+    event RefundReleased(address to, uint256 amount);
 
     uint256 private _totalShares;
     uint256 private _totalReleased;
@@ -149,5 +150,11 @@ abstract contract PaymentSplitter is Context {
         _shares[account] = shares_;
         _totalShares = _totalShares + shares_;
         emit PayeeAdded(account, shares_);
+    }
+
+    // Release refund to account
+    function _releaseRefund(address account, uint256 payment) internal {
+        Address.sendValue(payable(account), payment);
+        emit RefundReleased(account, payment);
     }
 }

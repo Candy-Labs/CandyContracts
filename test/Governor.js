@@ -1,5 +1,6 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
+const creatorAbi = require('../artifacts/contracts/CandyCreatorV1A.sol/CandyCreatorV1A.json');
 
 // Deploys a single creator CandyCreatorV1A ERC721A NFT Token contract
 async function deploySingle() {
@@ -42,6 +43,7 @@ describe("Governor Tests", function () {
     // Encode release() function to pass to propose() and execute()
     const token = await ethers.getContractAt('CandyCreatorV1A', CandyCreatorContract.address);
     const releaseCalldata = token.interface.encodeFunctionData('release', []);
+    //console.log(releaseCalldata)
     // Create a proposal that will release funds to the project creator
     const proposal = await CandyGovernorContract.connect(CandyGovernorOwner).propose(
       [CandyCreatorContract.address],
@@ -254,8 +256,39 @@ describe("Governor Tests", function () {
       [releaseCalldata],
       descriptionHash
     )
-    
-  });
 
+    const contractBalance = await CandyCreatorContract.connect(CandyCreatorDeployment.owner).getBalance()
+    //console.log(contractBalance)
+    expect(contractBalance).to.be.equal(0)
+
+    /*
+    //await network.provider.getLogs
+
+    async function getLogs(tokenAddress, tokenAbi, _provider) {
+      const iface = new ethers.utils.Interface(tokenAbi.abi);   
+      const logs = await _provider.getLogs({
+          address: tokenAddress
+      });
+      console.log(logs)
+      const decodedEvents = logs.map(log => {
+          iface.decodeEventLog("ProposalCreated", log.data)
+      });
+      console.log(decodedEvents)    
+      //const toAddresses = decodedEvents.map(event => event["values"]["to"]);
+      //const fromAddresses = decodedEvents.map(event => event["values"]["from"]);
+      //const amounts = decodedEvents.map(event => event["values"]["value"]);
+      //return [fromAddresses, toAddresses, amounts]}
+    }
+
+    const provider = await ethers.getDefaultProvider()
+    console.log(provider)
+
+    getLogs(CandyCreatorContract.address, creatorAbi, provider)
+  });
+  */
+  
+
+
+});
 
 });
