@@ -57,7 +57,7 @@ error NotAuthorizedToRelease();
 error NotTokenHolder();
 error RefundNotActive();
 
-contract CandyCreatorV1A is
+contract CandyCreator721AVotes is
     ERC721ABurnable,
     Votes,
     ERC2981Collection,
