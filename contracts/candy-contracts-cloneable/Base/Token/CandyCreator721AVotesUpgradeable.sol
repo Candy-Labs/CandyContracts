@@ -36,8 +36,9 @@ pragma solidity >=0.8.4 <0.9.0;
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/governance/utils/VotesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./token/ERC721/ERC721AUpgradeable.sol";
+import "./ERC721AUpgradeable.sol";
 
 
 error MintingNotActive();
@@ -52,16 +53,22 @@ error NotEnoughWhitelistSlots();
 error ExceedsMaxWhitelistMints();
 error WrongPayment();
 error InvalidMintSize();
+error NotAuthorizedToRelease();
+error NotTokenHolder();
+error RefundNotActive();
 
-contract CandyCreator721AUpgradeable is
+
+contract CandyCreator721AVotesUpgradeable is
     Initializable,
     ERC721AUpgradeable,
+    VotesUpgradeable,
     OwnableUpgradeable
 {
     // @notice basic state variables
     string private base;
     bool private mintingActive;
     bool private refundActive;
+    uint256 private refundPrice;
     uint256 private maxPublicMints;
     uint256 private mintPrice;
     uint256 private mintSize;

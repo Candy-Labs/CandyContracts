@@ -3,13 +3,14 @@
 
 pragma solidity ^0.8.4;
 
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
-import '@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
-import '@openzeppelin/contracts/utils/Context.sol';
-import '@openzeppelin/contracts/utils/Strings.sol';
-import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 
 error ApprovalCallerNotOwnerNorApproved();
 error ApprovalQueryForNonexistentToken();
@@ -35,9 +36,9 @@ error URIQueryForNonexistentToken();
  *
  * Assumes that the maximum token id cannot exceed 2**256 - 1 (max value of uint256).
  */
-contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
-    using Address for address;
-    using Strings for uint256;
+contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradeable, IERC721Upgradeable, IERC721MetadataUpgradeable {
+    using AddressUpgradeable for address;
+    using StringsUpgradeable for uint256;
 
     // Compiler will pack this into a single 256bit word.
     struct TokenOwnership {
@@ -88,13 +89,15 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
-    constructor(string memory name_, string memory symbol_) {
+    function __ERC721A_init(string memory name_, string memory symbol_) internal onlyInitializing {
+        __ERC721A_init_unchained(name_, symbol_);
+    }
+
+    function __ERC721A_init_unchained(string memory name_, string memory symbol_) internal onlyInitializing {
         _name = name_;
         _symbol = symbol_;
         _currentIndex = _startTokenId();
     }
-
-
 
     /**
      * To change the starting tokenId, please override this function.
@@ -128,10 +131,10 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165Upgradeable, IERC165Upgradeable) returns (bool) {
         return
-            interfaceId == type(IERC721).interfaceId ||
-            interfaceId == type(IERC721Metadata).interfaceId ||
+            interfaceId == type(IERC721Upgradeable).interfaceId ||
+            interfaceId == type(IERC721MetadataUpgradeable).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -247,7 +250,7 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
      * @dev See {IERC721-approve}.
      */
     function approve(address to, uint256 tokenId) public override {
-        address owner = ERC721A.ownerOf(tokenId);
+        address owner = ERC721AUpgradeable.ownerOf(tokenId);
         if (to == owner) revert ApprovalToCurrentOwner();
 
         if (_msgSender() != owner && !isApprovedForAll(owner, _msgSender())) {
@@ -328,7 +331,8 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
      * Tokens start existing when they are minted (`_mint`),
      */
     function _exists(uint256 tokenId) internal view returns (bool) {
-        return _startTokenId() <= tokenId && tokenId < _currentIndex && !_ownerships[tokenId].burned;
+        return _startTokenId() <= tokenId && tokenId < _currentIndex &&
+            !_ownerships[tokenId].burned;
     }
 
     function _safeMint(address to, uint256 quantity) internal {
@@ -568,8 +572,8 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
         uint256 tokenId,
         bytes memory _data
     ) private returns (bool) {
-        try IERC721Receiver(to).onERC721Received(_msgSender(), from, tokenId, _data) returns (bytes4 retval) {
-            return retval == IERC721Receiver(to).onERC721Received.selector;
+        try IERC721ReceiverUpgradeable(to).onERC721Received(_msgSender(), from, tokenId, _data) returns (bytes4 retval) {
+            return retval == IERC721ReceiverUpgradeable(to).onERC721Received.selector;
         } catch (bytes memory reason) {
             if (reason.length == 0) {
                 revert TransferToNonERC721ReceiverImplementer();
@@ -625,4 +629,11 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata {
         uint256 startTokenId,
         uint256 quantity
     ) internal virtual {}
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[42] private __gap;
 }

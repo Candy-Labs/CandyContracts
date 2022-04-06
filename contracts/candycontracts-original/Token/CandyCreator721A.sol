@@ -35,10 +35,10 @@ pragma solidity >=0.8.4 <0.9.0;
 
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./token/ERC721/ERC721A.sol";
-import "./eip/2981/ERC2981Collection.sol";
-import "./access/Ownable.sol";
-import "./modules/PaymentSplitter.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./ERC721A.sol";
+import "../Royalties/ERC2981Collection.sol";
+import "../PaymentSplitter/PaymentSplitter.sol";
 
 error MintingNotActive();
 error MintingActive();

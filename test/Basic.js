@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const tokenArtifact = require('../artifacts/contracts/candy-contracts-cloneable/Base/Token/CandyCreator721AUpgradeable.sol/CandyCreator721AUpgradeable.json');
 
 async function deploySingle() {
   const [owner, candyWallet, royalty1, royalty2] = await ethers.getSigners();
@@ -17,12 +18,53 @@ async function deployMulti() {
   return { contract: CandyCreator, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2 };
 }
 
+// Deploys a standard CandyCreator721A token factory 
+async function deploy721AFactory() {
+  const CandyCreator721AFactory = await ethers.getContractFactory("CandyCreator721ACloneFactory");
+  const FactoryDeployment = await CandyCreator721AFactory.deploy();
+  await FactoryDeployment.deployed();
+  return FactoryDeployment
+}
+
+// MAIN
+
+// Deploys a standard CandyCreator721A token using a factory contract 
+async function deploy721ATokenSingle(factoryContract) {
+  const [owner, candyWallet, royalty1, royalty2] = await ethers.getSigners();
+  const newToken = await factoryContract.connect(owner).callStatic.create721A("TestToken", "TEST", "placeholder.json", 1000000000 * 1, 10000, candyWallet.address, false, [owner.address, royalty1.address], [5000, 4500], "0x0000000000000000000000000000000000000000000000000000000000000000");
+  return newToken
+}
+
+// Deploys a standard CandyCreator721A token using a factory contract 
+async function deploy721ATokenMulti(factoryContract) {
+  const [owner, candyWallet, buyer1, royalty1] = await ethers.getSigners();
+  const newToken = await factoryContract.connect(owner).callStatic.create721A("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, true, [owner.address, royalty1.address], [5000, 4500], "0x0000000000000000000000000000000000000000000000000000000000000000");
+  return newToken
+}
+
+// Deploy both a factory and token (single creator with no split)
+async function deployFactoryAndTokenSingle() {
+  const [owner, candyWallet, royalty1, royalty2] = await ethers.getSigners();
+  const factory = await deploy721AFactory();
+  const newTokenAddress = deploy721ATokenSingle(factory);
+  const newToken = new ethers.Contract(newTokenAddress, tokenArtifact.abi, owner);
+  return { contract: newToken, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2 };
+}
+
+// Deploy both a factory and token (multi-creator with split)
+async function deployFactoryAndTokenMulti() {
+  const factory = await deploy721AFactory();
+  const newTokenAddress = deploy721ATokenMulti(factory);
+  const newToken = new ethers.Contract(newTokenAddress, tokenArtifact.abi, owner);
+  return { contract: newToken, owner: owner, candyWallet: candyWallet, royalty1: royalty1, royalty2: royalty2 };
+}
+
 describe("Basic Tests", function () {
 
   it("Single Creator Deployment", async function () {
 
-    const deployment = await deploySingle()
-    CandyCreator = deployment.contract
+    const deployment = await deployFactoryAndTokenSingle()
+    const CandyCreator = deployment.contract
 
     // Ensure the candyWallet address is the first payee in list
     const payee0 = await CandyCreator.payee(0)
@@ -45,8 +87,8 @@ describe("Basic Tests", function () {
 
   it("Multiple Creator Deployment", async function () {
 
-    const deployment = await deployMulti()
-    CandyCreator = deployment.contract
+    const deployment = await deployFactoryAndTokenMulti()
+    const CandyCreator = deployment.contract
 
     // Ensure the candyWallet address is the first payee in list
     const payee0 = await CandyCreator.payee(0)

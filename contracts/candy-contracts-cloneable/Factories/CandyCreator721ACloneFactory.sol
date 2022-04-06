@@ -1,20 +1,25 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.4 <0.9.0;
 
-import "./CandyCreator721AUpgradeable.sol";
+import "../Base/Token/CandyCreator721AUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "hardhat/console.sol";
 
 contract CandyCreator721ACloneFactory {
 
     address immutable tokenImplementation;
+    address immutable candyWallet;
 
-    constructor() {
+    event CandyCreator721ACreated(address tokenAddress);
+
+    constructor(address _candyWallet) {
         tokenImplementation = address(new CandyCreator721AUpgradeable());
+        candyWallet = _candyWallet;
     }
 
-    function createToken(string calldata name, string calldata symbol, string calldata _placeholderURI, uint256 _mintPrice, uint256 _mintSize, bytes32 _whitelistMerkleRoot) external returns (address) {
-        address clone = Clones.clone(tokenImplementation);
-        CandyCreator721AUpgradeable(clone).initialize(name, symbol, _placeholderURI, _mintPrice, _mintSize, _whitelistMerkleRoot);
+    function create721A(string calldata name, string calldata symbol, string calldata placeholderURI, uint256 mintPrice, uint256 mintSize, address[] memory splitAddresses, uint256[] memory splitShares, bytes32 whitelistMerkleRoot) external returns (address) {
+        address payable clone = payable(Clones.clone(tokenImplementation));
+        CandyCreator721AUpgradeable(clone).initialize(name, symbol, placeholderURI, mintPrice, mintSize, candyWallet, splitAddresses, splitShares, whitelistMerkleRoot);
+        emit CandyCreator721ACreated(clone);
         return clone;
     }
 }

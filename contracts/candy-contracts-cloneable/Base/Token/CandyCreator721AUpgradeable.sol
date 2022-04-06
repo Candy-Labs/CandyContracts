@@ -17,15 +17,14 @@
  *    ― Aaron Swartz (1986-2013)
  *
  *
- * Version: VARIANT_BASE_GOVERNED
- *          v2.0
+ * Version: VALHALLA
  *
  * Purpose: ERC-721 template for no-code users.
  *          Placeholder for pre-reveal information.
- *          Guaranteed mint royalties with PaymentSplitter.
- *          EIP-2981 compliant secondary sale royalty information.
- *          Whitelist functionality. Caps whitelist users and invalidates whitelist users after mint.
- *          Deployable to ETH, AVAX, BNB, MATIC, FANTOM chains.
+ *          Guaranteed mint royalties with CandyPaymentSplitter.
+ *          EIP-2981 compliant secondary sale collection-wide royalties with CandyCollection2981Royalties.
+ *          Whitelist functionality utilizing getAux from ERC721A.
+ *          Deployable to ETH, AVAX, BNB, MATIC, FANTOM chains on https://candychain.io.
  *
  */
 
@@ -33,13 +32,13 @@
 
 pragma solidity >=0.8.4 <0.9.0;
 
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "@openzeppelin/contracts/governance/utils/Votes.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "../Royalties/ERC2981Collection.sol";
-import "../PaymentSplitter/PaymentSplitter.sol";
-import "./extensions/ERC721ABurnable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../Royalties/CandyCollection2981RoyaltiesUpgradeable.sol";
+import "../PaymentSplitter/CandyPaymentSplitterUpgradeable.sol";
+import "./ERC721AUpgradeable.sol";
 
 error MintingNotActive();
 error MintingActive();
@@ -53,24 +52,19 @@ error NotEnoughWhitelistSlots();
 error ExceedsMaxWhitelistMints();
 error WrongPayment();
 error InvalidMintSize();
-error NotAuthorizedToRelease();
-error NotTokenHolder();
-error RefundNotActive();
 
-contract CandyCreator721AVotes is
-    ERC721ABurnable,
-    Votes,
-    ERC2981Collection,
-    PaymentSplitter,
-    Ownable
+contract CandyCreator721AUpgradeable is
+    Initializable,
+    ERC721AUpgradeable,
+    OwnableUpgradeable,
+    CandyCollection2981RoyaltiesUpgradeable,
+    CandyPaymentSplitterUpgradeable
+    
 {
     // @notice basic state variables
     string private base;
     bool private mintingActive;
     bool private lockedPayees;
-    bool private refundActive;
-    uint256 private refundPrice;
-
     uint256 private maxPublicMints;
     uint256 private mintPrice;
     uint256 private mintSize;
@@ -78,52 +72,46 @@ contract CandyCreator721AVotes is
 
     // @notice Whitelist functionality
     bool private whitelistActive;
-    bytes32 private whitelistMerkleRoot;
+    bytes32 public whitelistMerkleRoot;
     uint64 private maxWhitelistMints;
-
-    address private governor;
 
     event UpdatedMintPrice(uint256 _old, uint256 _new);
     event UpdatedMintSize(uint256 _old, uint256 _new);
     event UpdatedMaxWhitelistMints(uint256 _old, uint256 _new);
     event UpdatedMaxPublicMints(uint256 _old, uint256 _new);
     event UpdatedMintStatus(bool _old, bool _new);
-    event UpdatedRoyalties(address newRoyaltyAddress, uint256 newPercentage);
     event UpdatedWhitelistStatus(bool _old, bool _new);
     event UpdatedPresaleEnd(uint256 _old, uint256 _new);
-    event PayeesLocked(bool _status);
     event UpdatedWhitelist(bytes32 _old, bytes32 _new);
-    event SetGovernor(address governorAddress);
-    event RefundActivated(uint256 refundPrice);
+    event UpdatedRoyalties(address newRoyaltyAddress, uint256 newPercentage);
+    event PayeesLocked(bool _status);
 
-    // @notice Contract constructor requires as much information
-    // about the contract as possible to avoid unnecessary function calls
-    // on the contract post-deployment.
-    constructor(
+    function initialize(
         string memory name,
         string memory symbol,
         string memory _placeholderURI,
         uint256 _mintPrice,
         uint256 _mintSize,
-        address _candyWallet,
-        bool _multi,
+        address candyWallet,
         address[] memory splitAddresses,
         uint256[] memory splitShares,
         bytes32 _whitelistMerkleRoot
-    ) EIP712("Test", "TestV1") ERC721A(name, symbol) {
+    )   public initializer {
+        __ERC721A_init(name, symbol);
         placeholderURI = _placeholderURI;
         maxWhitelistMints = 2;
         maxPublicMints = 2;
         mintPrice = _mintPrice;
         mintSize = _mintSize;
-        
+
         if (_whitelistMerkleRoot != 0) {
             whitelistMerkleRoot = _whitelistMerkleRoot;
             enableWhitelist();
         }
-        
-        addPayee(_candyWallet, 500);
-        if (!_multi) {
+
+        addPayee(candyWallet, 500);
+
+        if (splitAddresses.length == 0) {
             addPayee(_msgSender(), 9500);
             lockPayees();
         } else {
@@ -132,6 +120,7 @@ contract CandyCreator721AVotes is
             }
             lockPayees();
         }
+
     }
 
     /***
@@ -157,7 +146,7 @@ contract CandyCreator721AVotes is
         if (totalSupply() + amount > mintSize) revert WouldExceedMintSize();
         if (amount > maxWhitelistMints) revert ExceedsMaxWhitelistMints();
         if (
-            !MerkleProof.verify(
+            !MerkleProofUpgradeable.verify(
                 merkleProof,
                 whitelistMerkleRoot,
                 keccak256(abi.encodePacked(_msgSender()))
@@ -206,8 +195,7 @@ contract CandyCreator721AVotes is
 
     // @notice will release funds from the contract to the addresses
     // owed funds as passed to constructor
-    function release() external {
-        if (governor != _msgSender()) revert NotAuthorizedToRelease();
+    function release() external onlyOwner {
         _release();
     }
 
@@ -242,48 +230,11 @@ contract CandyCreator721AVotes is
         _addPayee(newAddy, newShares);
     }
 
-    // @notice will lock the ability to add further payees on PaymentSplitter.sol
+    // @notice Will lock the ability to add further payees on PaymentSplitter.sol
     function lockPayees() private {
         require(!lockedPayees, "Can not set, payees locked");
         lockedPayees = true;
         emit PayeesLocked(lockedPayees);
-    }
-
-    // @dev Returns the tokenIds of the address. O(totalSupply) in complexity.
-    // Added to support the refund functionality.
-    function tokensOfOwner(address owner) internal view returns (uint256[] memory) {
-        unchecked {
-            uint256[] memory a = new uint256[](balanceOf(owner)); 
-            uint256 end = _currentIndex;
-            uint256 tokenIdsIdx;
-            address currOwnershipAddr;
-            for (uint256 i; i < end; i++) {
-                TokenOwnership memory ownership = _ownerships[i];
-                if (ownership.burned) {
-                    continue;
-                }
-                if (ownership.addr != address(0)) {
-                    currOwnershipAddr = ownership.addr;
-                }
-                if (currOwnershipAddr == owner) {
-                    a[tokenIdsIdx++] = i;
-                }
-            }
-            return a;    
-        }
-    }
-
-    // @notice will transfer the caller the refund amount they are owed
-    // the refund amount is (contractBalance / balanceOf)
-    function claimRefund() external {
-        uint256 holderBalance = balanceOf(_msgSender());
-        if (holderBalance == 0) revert NotTokenHolder();
-        if (!refundActive) revert RefundNotActive();
-        uint256[] memory ownedTokens = tokensOfOwner(_msgSender());
-        for (uint256 i; i < ownedTokens.length; i++) {
-            burn(ownedTokens[i]);
-        }
-        _releaseRefund(_msgSender(), refundPrice * holderBalance);
     }
 
     /***
@@ -418,41 +369,6 @@ contract CandyCreator721AVotes is
         return mintSize;
     }
 
-    // @notice will return the refund status of the collection
-    function refundStatus() external view returns (bool) {
-        return refundActive;
-    }
-
-    /*** 
-     *    ░██████╗░░█████╗░██╗░░░██╗███████╗██████╗░███╗░░██╗
-     *    ██╔════╝░██╔══██╗██║░░░██║██╔════╝██╔══██╗████╗░██║
-     *    ██║░░██╗░██║░░██║╚██╗░██╔╝█████╗░░██████╔╝██╔██╗██║
-     *    ██║░░╚██╗██║░░██║░╚████╔╝░██╔══╝░░██╔══██╗██║╚████║
-     *    ╚██████╔╝╚█████╔╝░░╚██╔╝░░███████╗██║░░██║██║░╚███║
-     *    ░╚═════╝░░╚════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝╚═╝░░╚══╝
-     */
-    
-    // @notice Sets the OpenZeppelin Governor contract for this token contract
-    // @param address govAddress - the address of the governing contract
-    function setGovernor(address govAddress) public onlyOwner {
-        governor = govAddress;
-        emit SetGovernor(govAddress);
-    }
-
-    /**
-     * @dev Must return the voting units held by an account.
-     */
-    function _getVotingUnits(address account) internal view override returns (uint256) {
-        return balanceOf(account);
-    }
-
-    function activateRefund() external {
-        if (governor != _msgSender()) revert NotAuthorizedToRelease();
-        refundPrice = address(this).balance / totalSupply();
-        refundActive = true; 
-        emit RefundActivated(refundPrice);
-    }
-
     /***
      *    ░█████╗░██╗░░░██╗███████╗██████╗░██████╗░██╗██████╗░███████╗
      *    ██╔══██╗██║░░░██║██╔════╝██╔══██╗██╔══██╗██║██╔══██╗██╔════╝
@@ -489,23 +405,11 @@ contract CandyCreator721AVotes is
                     abi.encodePacked(
                         baseURI,
                         "/",
-                        Strings.toString(tokenId),
+                        StringsUpgradeable.toString(tokenId),
                         ".json"
                     )
                 )
                 : placeholderURI;
-    }
-
-   
-    function _afterTokenTransfers(
-        address from,
-        address to,
-        uint256 startTokenId,
-        uint256 quantity
-    ) internal override {
-        // For governance (See Votes.sol)
-        _transferVotingUnits(from, to, quantity);
-        super._afterTokenTransfers(from, to, startTokenId, quantity);
     }
 
     // @notice solidity required override for supportsInterface(bytes4)
@@ -514,12 +418,20 @@ contract CandyCreator721AVotes is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721A, IERC165)
+        override(ERC721AUpgradeable, IERC165Upgradeable)
         returns (bool)
     {
-        return (interfaceId == type(ERC2981Collection).interfaceId ||
-            interfaceId == type(PaymentSplitter).interfaceId ||
-            interfaceId == type(Ownable).interfaceId ||
-            super.supportsInterface(interfaceId));
+        return (
+            interfaceId == type(CandyCollection2981RoyaltiesUpgradeable).interfaceId ||
+            interfaceId == type(OwnableUpgradeable).interfaceId ||
+            super.supportsInterface(interfaceId)
+        );
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[44] private __gap;
 }

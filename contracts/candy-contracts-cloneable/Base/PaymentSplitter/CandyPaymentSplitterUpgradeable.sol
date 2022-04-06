@@ -23,9 +23,10 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 error ZeroBalance();
 error AddressAlreadyAssigned();
@@ -46,9 +47,9 @@ error SharesToZeroAddress();
  * function.
  */
 
-abstract contract PaymentSplitter is Context {
-    using Counters for Counters.Counter;
-    Counters.Counter private _numPayees;
+contract CandyPaymentSplitterUpgradeable is Initializable, ContextUpgradeable {
+    using CountersUpgradeable for CountersUpgradeable.Counter;
+    CountersUpgradeable.Counter private _numPayees;
 
     event PayeeAdded(address account, uint256 shares);
     event PaymentReleased(address to, uint256 amount);
@@ -131,7 +132,7 @@ abstract contract PaymentSplitter is Context {
                 _released[account];
             _released[account] = _released[account] + payment;
             _totalReleased = _totalReleased + payment;
-            Address.sendValue(payable(account), payment);
+            AddressUpgradeable.sendValue(payable(account), payment);
             emit PaymentReleased(account, payment);
         }
     }
@@ -154,7 +155,14 @@ abstract contract PaymentSplitter is Context {
 
     // Release refund to account
     function _releaseRefund(address account, uint256 payment) internal {
-        Address.sendValue(payable(account), payment);
+        AddressUpgradeable.sendValue(payable(account), payment);
         emit RefundReleased(account, payment);
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[43] private __gap;
 }
