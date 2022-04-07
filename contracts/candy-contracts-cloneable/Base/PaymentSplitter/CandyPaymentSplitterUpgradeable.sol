@@ -47,7 +47,7 @@ error SharesToZeroAddress();
  * function.
  */
 
-contract CandyPaymentSplitterUpgradeable is Initializable, ContextUpgradeable {
+abstract contract CandyPaymentSplitterUpgradeable is Initializable, ContextUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _numPayees;
 

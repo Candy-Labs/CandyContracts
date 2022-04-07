@@ -28,11 +28,11 @@ import "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
 abstract contract CandyCollection2981RoyaltiesUpgradeable is Initializable, IERC2981Upgradeable {
 
   address private royaltyAddress;
-  uint256 private royaltyPercent;
+  uint256 private royaltyBasisPoints;
 
-  function _setRoyalties(address _receiver, uint256 _percentage) internal {
+  function _setRoyalties(address _receiver, uint256 _basisPoints) internal {
     royaltyAddress = _receiver;
-    royaltyPercent = _percentage;
+    royaltyBasisPoints = _basisPoints;
   }
 
   // Override for royaltyInfo(uint256, uint256)
@@ -46,10 +46,7 @@ abstract contract CandyCollection2981RoyaltiesUpgradeable is Initializable, IERC
     receiver = royaltyAddress;
 
     // This sets percentages by price * percentage / 100
-    royaltyAmount = _salePrice * royaltyPercent / 100;
+    royaltyAmount = _salePrice * royaltyBasisPoints / 10000;
   }
-
-
-
 
 }

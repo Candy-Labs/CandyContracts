@@ -12,7 +12,7 @@ async function deploy721AFactory(candyWallet) {
 // Deploys a standard CandyCreator721A token using a factory contract 
 async function deploy721AToken(factoryContract) {
   const [owner, candyWallet, buyer1, royalty1] = await ethers.getSigners();
-  const newToken = await factoryContract.connect(owner).create721A("TestToken", "TEST", "placeholder.json", 1000000000 * 1, 10000, [owner.address, royalty1.address], [5000, 4500], "0x0000000000000000000000000000000000000000000000000000000000000000", candyWallet.address);
+  const newToken = await factoryContract.connect(owner).create721A("TestToken", "TEST", "placeholder.json", 1000000000 * 1, 10000, [owner.address, royalty1.address], [5000, 4500], "0x0000000000000000000000000000000000000000000000000000000000000000");
 }
 
 //

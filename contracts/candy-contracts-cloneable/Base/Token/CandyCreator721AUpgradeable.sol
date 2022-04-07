@@ -6,39 +6,28 @@
  *    ╚█████╔╝██║░░██║██║░╚███║██████╔╝░░░██║░░░  ╚█████╔╝██║░░██║███████╗██║░░██║░░░██║░░░╚█████╔╝██║░░██║
  *    ░╚════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░  ░╚════╝░╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝░░░╚═╝░░░░╚════╝░╚═╝░░╚═╝
  *
- *
- *
- *
- *  “Growing up, I slowly had this process of realizing that all the things around me that people had told me
- *  were just the natural way things were, the way things always would be, they weren’t natural at all.
- *  They were things that could be changed, and they were things that, more importantly, were wrong and should change,
- *  and once I realized that, there was really no going back.”
- *
- *    ― Aaron Swartz (1986-2013)
- *
- *
  * Version: VALHALLA
  *
  * Purpose: ERC-721 template for no-code users.
  *          Placeholder for pre-reveal information.
+ *          Batch minting using ERC721A.
  *          Guaranteed mint royalties with CandyPaymentSplitter.
  *          EIP-2981 compliant secondary sale collection-wide royalties with CandyCollection2981Royalties.
- *          Whitelist functionality utilizing getAux from ERC721A.
- *          Deployable to ETH, AVAX, BNB, MATIC, FANTOM chains on https://candychain.io.
- *
+ *          Merkle whitelist functionality utilizing getAux from ERC721A.
+ *          Can be deployed using a Clone Factory (OpenZeppelin Upgradeable Style)
  */
 
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.8.4 <0.9.0;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "./ERC721AUpgradeable.sol";
 import "../Royalties/CandyCollection2981RoyaltiesUpgradeable.sol";
 import "../PaymentSplitter/CandyPaymentSplitterUpgradeable.sol";
-import "./ERC721AUpgradeable.sol";
 
 error MintingNotActive();
 error MintingActive();
@@ -53,28 +42,37 @@ error ExceedsMaxWhitelistMints();
 error WrongPayment();
 error InvalidMintSize();
 
+/// @title An ERC721A-based token contract.
+/// @author Candy Labs
 contract CandyCreator721AUpgradeable is
     Initializable,
-    ERC721AUpgradeable,
     OwnableUpgradeable,
+    ERC721AUpgradeable,
     CandyCollection2981RoyaltiesUpgradeable,
     CandyPaymentSplitterUpgradeable
-    
 {
-    // @notice basic state variables
+    // State Variables
     string private base;
-    bool private mintingActive;
-    bool private lockedPayees;
-    uint256 private maxPublicMints;
-    uint256 private mintPrice;
-    uint256 private mintSize;
+    // 32 bytes
     string private placeholderURI;
-
-    // @notice Whitelist functionality
-    bool private whitelistActive;
+    // 32 bytes
     bytes32 private whitelistMerkleRoot;
+    // 32 bytes 
+    uint256 private maxPublicMints;
+    // 32 bytes 
+    uint256 private mintPrice;
+    // 32 bytes 
+    uint256 private mintSize;
+    // 8 bytes 
     uint64 private maxWhitelistMints;
-
+    // 1 byte 
+    bool private whitelistActive;
+    // 1 byte 
+    bool private mintingActive;
+    // 1 byte
+    bool private lockedPayees;
+    
+    // Contract Events 
     event UpdatedMintPrice(uint256 _old, uint256 _new);
     event UpdatedMintSize(uint256 _old, uint256 _new);
     event UpdatedMaxWhitelistMints(uint256 _old, uint256 _new);
@@ -86,29 +84,40 @@ contract CandyCreator721AUpgradeable is
     event UpdatedRoyalties(address newRoyaltyAddress, uint256 newPercentage);
     event PayeesLocked(bool _status);
 
+
+    /***
+     *    ░██████╗███████╗████████╗██╗░░░██╗██████╗░
+     *    ██╔════╝██╔════╝╚══██╔══╝██║░░░██║██╔══██╗
+     *    ╚█████╗░█████╗░░░░░██║░░░██║░░░██║██████╔╝
+     *    ░╚═══██╗██╔══╝░░░░░██║░░░██║░░░██║██╔═══╝░
+     *    ██████╔╝███████╗░░░██║░░░╚██████╔╝██║░░░░░
+     *    ╚═════╝░╚══════╝░░░╚═╝░░░░╚═════╝░╚═╝░░░░░
+     *    This section pertains to contract initialization and setup.
+     */
+
     function initialize(
-        // 32 bytes 1 slot
+        // 32 bytes
         string memory name,
-        // 32 bytes 1 slot 
+        // 32 bytes
         string memory symbol,
-        // 32 bytes 1 slot 
+        // 32 bytes
         string memory _placeholderURI,
-        // 32 bytes 1 slot 
+        // 32 bytes
         uint256 _mintPrice,
-        // 32 bytes 1 slot
+        // 32 bytes 
         uint256 _mintSize,
-        // 32 bytes per element, x slots 
+        // 32 bytes per element
         address[] memory splitAddresses,
-        // 32 bytes per element, x slots 
-        // Can use uint16 (max value 65535) since an element in splitShares cannot be greater than 9,500.
-        uint256[] memory splitShares,
-        // 32 bytes 1 slot 
+        // 32 bytes per element
+        // Can use uint16 (max value 65535) since an element in splitBasisPoints cannot be greater than 9,500.
+        uint256[] memory splitBasisPoints,
+        // 32 bytes
         bytes32 _whitelistMerkleRoot,
-        // 20 bytes (could take this out?)
+        // 20 bytes
         address candyWallet
     )   public initializer {
         __ERC721A_init(name, symbol);
-        setupPaymentSplit(candyWallet, splitAddresses, splitShares);
+        setupPaymentSplit(candyWallet, splitAddresses, splitBasisPoints);
         if (_whitelistMerkleRoot != 0) {
             whitelistMerkleRoot = _whitelistMerkleRoot;
             enableWhitelist();
@@ -120,15 +129,18 @@ contract CandyCreator721AUpgradeable is
         maxPublicMints = 2;
     }
 
-    // Used to attempt to eliminate stack too deep errors with initializer
-    function setupPaymentSplit(address candyWallet, address[] memory splitAddresses, uint256[] memory splitShares) private {
+    /// @dev Called only within the logic of the initializer function to setup the payment splitting logic. 
+    /// @param candyWallet The address used to receive the 5% (500 basis points) Candy Chain platform fee.
+    /// @param splitAddresses An array containing the addresses that should receive payment.
+    /// @param splitBasisPoints An array containing the basis points for each address in splitAddresses.
+    function setupPaymentSplit(address candyWallet, address[] memory splitAddresses, uint256[] memory splitBasisPoints) private onlyInitializing {
         addPayee(candyWallet, 500);
         if (splitAddresses.length == 0) {
             addPayee(_msgSender(), 9500);
             lockPayees();
         } else {
             for (uint256 i = 0; i < splitAddresses.length; i++) {
-                addPayee(splitAddresses[i], splitShares[i]);
+                addPayee(splitAddresses[i], splitBasisPoints[i]);
             }
             lockPayees();
         }
@@ -141,16 +153,17 @@ contract CandyCreator721AUpgradeable is
      *    ██║╚██╔╝██║██║██║╚██╗██║   ██║
      *    ██║ ╚═╝ ██║██║██║ ╚████║   ██║
      *    ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝   ╚═╝
+     *    This section pertains to minting functionality.
      */
 
-    // @notice this is the mint function, mint Fees in ERC20,
-    //  requires amount * mintPrice to be sent by caller
-    // @param uint amount - number of tokens minted
+    /// @notice this is the mint function, mint Fees in ERC20,
+    ///  requires amount * mintPrice to be sent by caller.
+    /// @param merkleProof The merkleProof generated by an off-chain API.
+    /// @param amount The number of tokens to be minted.
     function whitelistMint(bytes32[] calldata merkleProof, uint64 amount)
         external
         payable
     {
-        // @notice using Checks-Effects-Interactions
         if (!mintingActive) revert MintingNotActive();
         if (!whitelistActive) revert WhitelistNotRequired();
         if (_msgValue() != mintPrice * amount) revert WrongPayment();
@@ -170,9 +183,9 @@ contract CandyCreator721AUpgradeable is
         _setAux(_msgSender(), numWhitelistMinted);
     }
 
-    // @notice this is the mint function, mint Fees in ERC20,
-    //  requires amount * mintPrice to be sent by caller
-    // @param uint amount - number of tokens minted
+    /// @notice this is the mint function, mint Fees in ERC20,
+    ///  requires amount * mintPrice to be sent by caller.
+    /// @param amount The number of tokens to be minted.
     function publicMint(uint256 amount) external payable {
         if (whitelistActive) revert WhitelistRequired();
         if (!mintingActive) revert MintingNotActive();
@@ -189,7 +202,7 @@ contract CandyCreator721AUpgradeable is
      *    ██╔═══╝░██╔══██║░░╚██╔╝░░██║╚██╔╝██║██╔══╝░░██║╚████║░░░██║░░░
      *    ██║░░░░░██║░░██║░░░██║░░░██║░╚═╝░██║███████╗██║░╚███║░░░██║░░░
      *    ╚═╝░░░░░╚═╝░░╚═╝░░░╚═╝░░░╚═╝░░░░░╚═╝╚══════╝╚═╝░░╚══╝░░░╚═╝░░░
-     * This section pertains to mint fees, royalties, and fund release.
+     *    This section pertains to mint fees, royalties, and fund release.
      */
 
     // Function to receive ether, msg.data must be empty
@@ -204,44 +217,46 @@ contract CandyCreator721AUpgradeable is
         emit PaymentReceived(_msgSender(), _msgValue());
     }
 
-    // @notice will release funds from the contract to the addresses
-    // owed funds as passed to constructor
+    /// @notice will release funds from the contract to the addresses owed payment.
+    ///  Only the owner can call this function.
+    /// @dev Defaults to the logic contained in CandyPaymentSplitterUpgradeable.
     function release() external onlyOwner {
         _release();
     }
 
-    // @notice this will use internal functions to set EIP 2981
-    //  found in IERC2981.sol and used by ERC2981Collections.sol
-    // @param address _royaltyAddress - Address for all royalties to go to
-    // @param uint256 _percentage - Precentage in whole number of comission
-    //  of secondary sales
-    function setRoyaltyInfo(address _royaltyAddress, uint256 _percentage)
+    /// @notice Sets single address EIP-2981 royalty information for this collection.
+    /// @dev Uses internal functions to set EIP-2981
+    ///  found in IERC2981Upgradeable.sol and used by CandyCollection2981RoyaltiesUpgradeable.sol
+    /// @param _royaltyAddress - Address for all royalties to go to.
+    /// @param _basisPoints - Basis points (out of 10,000) to set as secondary sale royalty fee.
+    ///  of secondary sales
+    function setRoyaltyInfo(address _royaltyAddress, uint256 _basisPoints)
         public
         onlyOwner
     {
-        _setRoyalties(_royaltyAddress, _percentage);
-        emit UpdatedRoyalties(_royaltyAddress, _percentage);
+        _setRoyalties(_royaltyAddress, _basisPoints);
+        emit UpdatedRoyalties(_royaltyAddress, _basisPoints);
     }
 
-    // @notice this will set the fees required to mint using
-    //  publicMint(), must enter in wei. So 1 ETH = 10**18.
-    // @param uint256 _newFee - fee you set, if ETH 10**18, if
-    //  an ERC20 use token's decimals in calculation
+    /// @notice this will set the fees required to mint using
+    ///  publicMint(), must enter in wei. So 1 ETH = 10**18.
+    /// @param _newFee - fee you set, if ETH 10**18, if
+    ///  an ERC20 use token's decimals in calculation
     function setMintPrice(uint256 _newFee) public onlyOwner {
         uint256 oldFee = mintPrice;
         mintPrice = _newFee;
         emit UpdatedMintPrice(oldFee, mintPrice);
     }
 
-    // @notice will add an address to PaymentSplitter by owner role
-    // @param address newAddy - address to recieve payments
-    // @param uint newShares - number of shares they recieve
-    function addPayee(address newAddy, uint256 newShares) private {
+    /// @notice will add an address to PaymentSplitter by owner role
+    /// @param newAddress Address to receive payments.
+    /// @param _basisPoints The basis points newAddress should receive of contract earnings.
+    function addPayee(address newAddress, uint256 _basisPoints) private {
         require(!lockedPayees, "Can not set, payees locked");
-        _addPayee(newAddy, newShares);
+        _addPayee(newAddress, _basisPoints);
     }
 
-    // @notice Will lock the ability to add further payees on PaymentSplitter.sol
+    /// @notice Will lock the ability to add further payees on CandyPaymentSplitter.sol
     function lockPayees() private {
         require(!lockedPayees, "Can not set, payees locked");
         lockedPayees = true;
@@ -256,10 +271,16 @@ contract CandyCreator721AUpgradeable is
      *    ██╔══██║██║░░██║██║╚██╔╝██║██║██║╚████║
      *    ██║░░██║██████╔╝██║░╚═╝░██║██║██║░╚███║
      *    ╚═╝░░╚═╝╚═════╝░╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝
-     * This section pertains to to basic contract administration tasks.
+     *    This section pertains to to basic contract administration tasks.
+     *    All functions are restricted with the onlyOwner modifier.
      */
 
-    // @notice this will enable publicMint()
+    /// @notice Updates the placeholderURI.
+    function updatePlaceholder(string calldata _placeholderURI) external onlyOwner {
+        placeholderURI = _placeholderURI;
+    }
+
+    /// @notice Enables minting. 
     function enableMinting() external onlyOwner {
         if (mintingActive) revert MintingActive();
         bool old = mintingActive;
@@ -267,7 +288,7 @@ contract CandyCreator721AUpgradeable is
         emit UpdatedMintStatus(old, mintingActive);
     }
 
-    // @notice this will disable publicMint()
+    /// @notice Disables minting. 
     function disableMinting() external onlyOwner {
         if (!mintingActive) revert MintingNotActive();
         bool old = mintingActive;
@@ -275,7 +296,8 @@ contract CandyCreator721AUpgradeable is
         emit UpdatedMintStatus(old, mintingActive);
     }
 
-    // @notice this will enable whitelist or "if" in publicMint()
+    /// @notice Requires whitelist membership for minting. 
+    /// @dev Public visibility required since the function is called internally.
     function enableWhitelist() public onlyOwner {
         if (whitelistActive) revert WhitelistRequired();
         bool old = whitelistActive;
@@ -283,7 +305,7 @@ contract CandyCreator721AUpgradeable is
         emit UpdatedWhitelistStatus(old, whitelistActive);
     }
 
-    // @notice this will disable whitelist or "else" in publicMint()
+    /// @notice Removes the whitelist requirement for minting. 
     function disableWhitelist() external onlyOwner {
         if (!whitelistActive) revert WhitelistNotRequired();
         bool old = whitelistActive;
@@ -291,44 +313,43 @@ contract CandyCreator721AUpgradeable is
         emit UpdatedWhitelistStatus(old, whitelistActive);
     }
 
-    // @notice this will set a new Merkle root used to verify whitelist membership
-    // together with a proof submitted to the mint function
-    // @param bytes32 _merkleRoot - generated merkleRoot hash
+    /// @notice Sets a new Merkle root used to verify whitelist membership
+    ///  in combination with a proof submitted to the whitelistMint function.
+    /// @param bytes32 _merkleRoot - generated merkleRoot hash
     function setWhitelistMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
         bytes32 old = whitelistMerkleRoot;
         whitelistMerkleRoot = _merkleRoot;
         emit UpdatedWhitelist(old, whitelistMerkleRoot);
     }
 
-    // @notice this will set the maximum number of tokens a whitelisted user can mint.
-    // @param uint256 _amount - max amount of tokens
+    /// @notice Sets the maximum number of tokens a whitelisted user can mint.
+    /// @param _amount The maximum amount of tokens a whitelisted user can mint.
     function setMaxWhitelistMints(uint64 _amount) public onlyOwner {
         uint256 oldAmount = maxWhitelistMints;
         maxWhitelistMints = _amount;
         emit UpdatedMaxWhitelistMints(oldAmount, maxWhitelistMints);
     }
 
-    // @notice this will set the maximum number of tokens a single address can mint at a time
-    // during the public mint period. Keep in mind that user will be able to transfer their tokens
-    // to a different address, and continue minting this amount of tokens on each transaction.
-    // If you wish to prevent this, use the whitelist.
-    // @param uint256 _amount - max amount of tokens
+    /// @notice this will set the maximum number of tokens a single address can mint AT A TIME
+    ///  during the public mint period. Keep in mind that regardless of the number set, during public
+    ///  minting any user will still be able to call the publicMint function an unlimited number of times
+    /// @param  _amount The maximum amount of tokens that can be minted in a public transaction.
     function setMaxPublicMints(uint256 _amount) public onlyOwner {
         uint256 oldAmount = maxPublicMints;
         maxPublicMints = _amount;
         emit UpdatedMaxPublicMints(oldAmount, maxWhitelistMints);
     }
 
-    // @notice this updates the base URI for the token metadata
-    // it does not emit an event so that it can be set invisibly to purchasers
-    // and avoid token sniping
-    // @param string _ - max amount of tokens
+    /// @notice this updates the base URI for the token metadata
+    ///  it does not emit an event so that it can be set invisibly to purchasers
+    ///  and avoid token sniping.
+    /// @param baseURI The new baseURI to generate tokenURIs from. 
     function setBaseURI(string memory baseURI) public onlyOwner {
         base = baseURI;
     }
 
-    // @notice will set mint size by owner role
-    // @param uint256 _amount - set number to mint
+    /// @notice Sets the mint size. Cannot be smaller than the totalSupply().
+    /// @param _amount The mint size, or number of items in the collection.
     function setMintSize(uint256 _amount) public onlyOwner {
         if (_amount < totalSupply()) revert InvalidMintSize();
         uint256 old = mintSize;
@@ -343,39 +364,41 @@ contract CandyCreator721AUpgradeable is
      *    ██╔═══╝░██║░░░██║██╔══██╗██║░░░░░██║██║░░██╗  ░╚████╔╝░██║██╔══╝░░░░████╔═████║░░╚═══██╗
      *    ██║░░░░░╚██████╔╝██████╦╝███████╗██║╚█████╔╝  ░░╚██╔╝░░██║███████╗░░╚██╔╝░╚██╔╝░██████╔╝
      *    ╚═╝░░░░░░╚═════╝░╚═════╝░╚══════╝╚═╝░╚════╝░  ░░░╚═╝░░░╚═╝╚══════╝░░░╚═╝░░░╚═╝░░╚═════╝░
+     *    Public view functions to retrieve information about the contract. 
      */
-    // @notice will return whether minting is enabled
+
+    /// @notice will return whether minting is enabled
     function mintStatus() external view returns (bool) {
         return mintingActive;
     }
 
-    // @notice will return whitelist status of Minter
+    /// @notice will return whitelist status of Minter
     function whitelistStatus() external view returns (bool) {
         return whitelistActive;
     }
 
-    // @notice will return minting fees
+    /// @notice will return minting fees
     function mintingFee() external view returns (uint256) {
         return mintPrice;
     }
 
-    // @notice will return whitelist status of Minter
+    /// @notice will return whitelist status of Minter
     function whitelistMaxMints() external view returns (uint256) {
         return maxWhitelistMints;
     }
 
-    // @notice will return maximum tokens that are allowed to be minted during a single transaction
-    // during the whitelist period
+    /// @notice will return maximum tokens that are allowed to be minted during
+    ///  a single publicMint transaction
     function publicMaxMints() external view returns (uint256) {
         return maxPublicMints;
     }
 
-    // @notice this is a public getter for ETH balance on contract
+    /// @notice this is a public getter for ETH balance on contract
     function getBalance() external view returns (uint256) {
         return address(this).balance;
     }
 
-    // @notice will return the planned size of the collection
+    /// @notice will return the planned size of the collection
     function collectionSize() external view returns (uint256) {
         return mintSize;
     }
@@ -389,18 +412,22 @@ contract CandyCreator721AUpgradeable is
      *    ░╚════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝╚═════╝░╚══════╝
      */
 
-    // @notice Solidity required override for _baseURI(), if you wish to
-    //  be able to set from API -> IPFS or vice versa using setBaseURI(string)
+    /// @notice Solidity required override for _baseURI(), if you wish to
+    ///  be able to set from API -> IPFS or vice versa using setBaseURI(string)
     function _baseURI() internal view override returns (string memory) {
         return base;
     }
 
-    // @notice Override for ERC721A _startTokenId to change from default 0 -> 1
+    /// @notice Sets the first tokenId that will be minted
+    /// @dev Override for ERC721A _startTokenId to change from default 0 -> 1
     function _startTokenId() internal pure override returns (uint256) {
         return 1;
     }
 
-    // @notice Override for ERC721A tokenURI
+    /// @notice Returns the metadata URI for a given token
+    /// @dev Override for ERC721A tokenURI
+    /// @param tokenId The id of the token in this collection to retrieve the URI for. Must exist.
+    /// @return The baseURI suffixed with ./{tokenId}.json
     function tokenURI(uint256 tokenId)
         public
         view
@@ -423,9 +450,9 @@ contract CandyCreator721AUpgradeable is
                 : placeholderURI;
     }
 
-    // @notice solidity required override for supportsInterface(bytes4)
-    // @param bytes4 interfaceId - bytes4 id per interface or contract
-    // calculated by ERC165 standards automatically
+    /// @notice solidity required override for supportsInterface(bytes4)
+    /// @param interfaceId bytes4 id per interface or contract
+    ///  calculated by ERC165 standards automatically
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -438,11 +465,4 @@ contract CandyCreator721AUpgradeable is
             super.supportsInterface(interfaceId)
         );
     }
-
-    /**
-     * @dev This empty reserved space is put in place to allow future versions to add new
-     * variables without shifting down storage in the inheritance chain.
-     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-     */
-    uint256[44] private __gap;
 }
