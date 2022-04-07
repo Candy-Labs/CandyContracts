@@ -72,7 +72,7 @@ contract CandyCreator721AUpgradeable is
 
     // @notice Whitelist functionality
     bool private whitelistActive;
-    bytes32 public whitelistMerkleRoot;
+    bytes32 private whitelistMerkleRoot;
     uint64 private maxWhitelistMints;
 
     event UpdatedMintPrice(uint256 _old, uint256 _new);
@@ -87,30 +87,42 @@ contract CandyCreator721AUpgradeable is
     event PayeesLocked(bool _status);
 
     function initialize(
+        // 32 bytes 1 slot
         string memory name,
+        // 32 bytes 1 slot 
         string memory symbol,
+        // 32 bytes 1 slot 
         string memory _placeholderURI,
+        // 32 bytes 1 slot 
         uint256 _mintPrice,
+        // 32 bytes 1 slot
         uint256 _mintSize,
-        address candyWallet,
+        // 32 bytes per element, x slots 
         address[] memory splitAddresses,
+        // 32 bytes per element, x slots 
+        // Can use uint16 (max value 65535) since an element in splitShares cannot be greater than 9,500.
         uint256[] memory splitShares,
-        bytes32 _whitelistMerkleRoot
+        // 32 bytes 1 slot 
+        bytes32 _whitelistMerkleRoot,
+        // 20 bytes (could take this out?)
+        address candyWallet
     )   public initializer {
         __ERC721A_init(name, symbol);
-        placeholderURI = _placeholderURI;
-        maxWhitelistMints = 2;
-        maxPublicMints = 2;
-        mintPrice = _mintPrice;
-        mintSize = _mintSize;
-
+        setupPaymentSplit(candyWallet, splitAddresses, splitShares);
         if (_whitelistMerkleRoot != 0) {
             whitelistMerkleRoot = _whitelistMerkleRoot;
             enableWhitelist();
         }
+        placeholderURI = _placeholderURI;
+        mintPrice = _mintPrice;
+        mintSize = _mintSize;
+        maxWhitelistMints = 2;
+        maxPublicMints = 2;
+    }
 
+    // Used to attempt to eliminate stack too deep errors with initializer
+    function setupPaymentSplit(address candyWallet, address[] memory splitAddresses, uint256[] memory splitShares) private {
         addPayee(candyWallet, 500);
-
         if (splitAddresses.length == 0) {
             addPayee(_msgSender(), 9500);
             lockPayees();
@@ -120,7 +132,6 @@ contract CandyCreator721AUpgradeable is
             }
             lockPayees();
         }
-
     }
 
     /***

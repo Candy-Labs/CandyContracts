@@ -16,9 +16,20 @@ contract CandyCreator721ACloneFactory {
         candyWallet = _candyWallet;
     }
 
-    function create721A(string calldata name, string calldata symbol, string calldata placeholderURI, uint256 mintPrice, uint256 mintSize, address[] memory splitAddresses, uint256[] memory splitShares, bytes32 whitelistMerkleRoot) external returns (address) {
+    function create721A(
+        string memory name,
+        string memory symbol,
+        string memory _placeholderURI,
+        uint256 _mintPrice,
+        uint256 _mintSize,
+        address[] memory splitAddresses,
+        uint256[] memory splitShares,
+        bytes32 _whitelistMerkleRoot,
+        address _candyWallet
+    )
+    external returns (address) {
         address payable clone = payable(Clones.clone(tokenImplementation));
-        CandyCreator721AUpgradeable(clone).initialize(name, symbol, placeholderURI, mintPrice, mintSize, candyWallet, splitAddresses, splitShares, whitelistMerkleRoot);
+        CandyCreator721AUpgradeable(clone).initialize(name, symbol, _placeholderURI, _mintPrice, _mintSize, splitAddresses, splitShares, _whitelistMerkleRoot, _candyWallet);
         emit CandyCreator721ACreated(clone);
         return clone;
     }
