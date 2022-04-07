@@ -315,7 +315,7 @@ contract CandyCreator721AUpgradeable is
 
     /// @notice Sets a new Merkle root used to verify whitelist membership
     ///  in combination with a proof submitted to the whitelistMint function.
-    /// @param bytes32 _merkleRoot - generated merkleRoot hash
+    /// @param _merkleRoot The generated Merkle root hash for the whitelist.
     function setWhitelistMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
         bytes32 old = whitelistMerkleRoot;
         whitelistMerkleRoot = _merkleRoot;
