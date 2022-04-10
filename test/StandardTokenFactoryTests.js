@@ -46,7 +46,7 @@ describe("CandyCreator721A Clone Factory", function () {
 
   // Used to determine gas savings
 
-  let TEST_LOOPS = 100
+  let TEST_LOOPS = 10
 
   it(`Should deploy ${TEST_LOOPS} tokens without using a factory`, async function () {
     for (var i = 0; i < TEST_LOOPS; i++) {

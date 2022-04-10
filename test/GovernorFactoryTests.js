@@ -26,8 +26,9 @@ async function deployGovernorFromToken(factoryContract, tokenAddress) {
 
 // Deploys a CandyCreator721A voting token factory 
 async function deploy721AVotesFactory() {
+  const [_, candyWallet] = await ethers.getSigners();
   const CandyCreator721AVotesFactory = await ethers.getContractFactory("CandyCreator721AVotesCloneFactory");
-  const FactoryDeployment = await CandyCreator721AVotesFactory.deploy();
+  const FactoryDeployment = await CandyCreator721AVotesFactory.deploy(candyWallet.address);
   await FactoryDeployment.deployed();
   return FactoryDeployment
 }
@@ -44,7 +45,7 @@ async function deploy721AVotesTokenNaive() {
 // Deploys a CandyCreator721A voting token using a factory contract 
 async function deploy721AVotesToken(factoryContract) {
   const [owner, candyWallet, buyer1, royalty1] = await ethers.getSigners();
-  const newToken = await factoryContract.connect(owner).callStatic.create721AVotes("TestToken", "TEST", "placeholder.json", 1000000000 * 1, 10000, "0x0000000000000000000000000000000000000000000000000000000000000000");
+  const newToken = await factoryContract.connect(owner).callStatic.create721AVotes("TestToken", "TEST", "placeholder.json", 1000000000 * 1, 10000, [owner.address, royalty1.address], [5000, 4500], "0x0000000000000000000000000000000000000000000000000000000000000000");
   return newToken;
 }
 
@@ -85,7 +86,7 @@ describe("CandyGovernor Clone Factory", function () {
 
   // Used to determine gas savings
 
-  let TEST_LOOPS = 100
+  let TEST_LOOPS = 10
 
   it(`Should deploy ${TEST_LOOPS} governors on naive tokens using factory`, async function () {
     const token = await deploy721AVotesTokenNaive();

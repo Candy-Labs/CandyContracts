@@ -44,8 +44,6 @@ abstract contract CandyCollection2981RoyaltiesUpgradeable is Initializable, IERC
     uint256 royaltyAmount
   ) {
     receiver = royaltyAddress;
-
-    // This sets percentages by price * percentage / 100
     royaltyAmount = _salePrice * royaltyBasisPoints / 10000;
   }
 

@@ -432,20 +432,20 @@ contract CandyCreator721AVotes is
      *    ░╚═════╝░░╚════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝╚═╝░░╚══╝
      */
     
-    // @notice Sets the OpenZeppelin Governor contract for this token contract
-    // @param address govAddress - the address of the governing contract
+    /// @notice Sets the OpenZeppelin Governor contract for this token contract
+    /// @param govAddress The address of the governing contract.
     function setGovernor(address govAddress) public onlyOwner {
         governor = govAddress;
         emit SetGovernor(govAddress);
     }
 
-    /**
-     * @dev Must return the voting units held by an account.
-     */
+    /// @dev Must return the voting units held by an account.
     function _getVotingUnits(address account) internal view override returns (uint256) {
         return balanceOf(account);
     }
 
+    /// @notice Activates a refund. Can only be called by the governor contract.
+    /// @dev Sets the refund price into the state. 
     function activateRefund() external {
         if (governor != _msgSender()) revert NotAuthorizedToRelease();
         refundPrice = address(this).balance / totalSupply();
