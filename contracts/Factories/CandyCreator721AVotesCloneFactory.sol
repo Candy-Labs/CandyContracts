@@ -7,13 +7,12 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 contract CandyCreator721AVotesCloneFactory {
 
     address immutable tokenImplementation;
-    address immutable candyWallet;
+    address immutable candyWallet = 0xD52Ed960e6Bf7B2CdA61980FC286772159e3D266;
 
     event CandyCreator721AVotesCreated(address tokenAddress);
 
-    constructor(address _candyWallet) {
+    constructor() {
         tokenImplementation = address(new CandyCreator721AVotesUpgradeable());
-        candyWallet = _candyWallet;
     }
 
     function create721AVotes(

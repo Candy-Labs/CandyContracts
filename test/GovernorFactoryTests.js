@@ -28,7 +28,7 @@ async function deployGovernorFromToken(factoryContract, tokenAddress) {
 async function deploy721AVotesFactory() {
   const [_, candyWallet] = await ethers.getSigners();
   const CandyCreator721AVotesFactory = await ethers.getContractFactory("CandyCreator721AVotesCloneFactory");
-  const FactoryDeployment = await CandyCreator721AVotesFactory.deploy(candyWallet.address);
+  const FactoryDeployment = await CandyCreator721AVotesFactory.deploy();
   await FactoryDeployment.deployed();
   return FactoryDeployment
 }
@@ -86,7 +86,8 @@ describe("CandyGovernor Clone Factory", function () {
 
   // Used to determine gas savings
 
-  let TEST_LOOPS = 10
+  let TEST_LOOPS = 100
+  
 
   it(`Should deploy ${TEST_LOOPS} governors on naive tokens using factory`, async function () {
     const token = await deploy721AVotesTokenNaive();
@@ -112,6 +113,7 @@ describe("CandyGovernor Clone Factory", function () {
   });
 
   it(`Should deploy ${TEST_LOOPS} governors on cloned tokens using factory`, async function () {
+    const [_, candyWallet] = await ethers.getSigners();
     const tokenFactory = await deploy721AVotesFactory();
     const token = await deploy721AVotesToken(tokenFactory);
     const factory = await deployGovernorFactory();

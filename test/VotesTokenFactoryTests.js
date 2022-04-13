@@ -5,7 +5,7 @@ const { ethers, network } = require("hardhat");
 async function deploy721AVotesFactory() {
   const [_, candyWallet] = await ethers.getSigners();
   const CandyCreator721AVotesFactory = await ethers.getContractFactory("CandyCreator721AVotesCloneFactory");
-  const FactoryDeployment = await CandyCreator721AVotesFactory.deploy(candyWallet.address);
+  const FactoryDeployment = await CandyCreator721AVotesFactory.deploy();
   await FactoryDeployment.deployed();
   return FactoryDeployment
 }
@@ -46,7 +46,7 @@ describe("CandyCreator721AVotes Clone Factory", function () {
 
   // Used to determine gas savings
 
-  let TEST_LOOPS = 10
+  let TEST_LOOPS = 100
 
   it(`Should deploy ${TEST_LOOPS} tokens without using a factory`, async function () {
     for (var i = 0; i < TEST_LOOPS; i++) {
