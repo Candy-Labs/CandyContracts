@@ -20,9 +20,6 @@ Open-source NFT contract implementations for everyone! Used by the [Candy Chain 
 * Access Control 
 * Re-entrancy safe mint functions
 
-## Voting and Governance (Experimental)
-* Available on the [voting branch](https://github.com/Candy-Labs/CandyContracts/blob/voting/README.md)
-
 ## Testing / Auditing 
 To start using these contracts with [Hardhat](https://hardhat.org/) simply run the following commands:
 1. `npm install`
