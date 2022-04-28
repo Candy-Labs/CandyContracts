@@ -46,6 +46,7 @@ error InvalidMintSize();
 error NotAuthorizedToRelease();
 error NotTokenHolder();
 error RefundNotActive();
+error GovernorLocked();
 
 /// @title An ERC721A-based contract with custodied fund release.
 /// @author Candy Labs
@@ -83,6 +84,8 @@ contract CandyCreator721AVotesUpgradeable is
     bool private lockedPayees;
     // 1 byte
     bool private refundActive;
+    // 1 byte
+    bool private governorLocked;
     
     // Contract Events 
     event UpdatedMintPrice(uint256 _old, uint256 _new);
@@ -479,7 +482,9 @@ contract CandyCreator721AVotesUpgradeable is
     ///  this is a proper governor themselves.
     /// @param govAddress The address of the governing contract.
     function setGovernor(address govAddress) public onlyOwner {
+        if (governorLocked) revert GovernorLocked();
         governor = govAddress;
+        governorLocked = true;
         emit SetGovernor(govAddress);
     }
 
