@@ -29,7 +29,7 @@ contract CandyCreator721ACloneFactory {
     )
     external returns (address) {
         address payable clone = payable(Clones.clone(tokenImplementation));
-        CandyCreator721AUpgradeable(clone).initialize(name, symbol, _placeholderURI, _mintPrice, _mintSize, splitAddresses, splitShares, _whitelistMerkleRoot, _maxPublicMints, _maxWhitelistMints, candyWallet);
+        CandyCreator721AUpgradeable(clone).initialize(name, symbol, _placeholderURI, _mintPrice, _mintSize, splitAddresses, splitShares, _whitelistMerkleRoot, _maxPublicMints, _maxWhitelistMints, candyWallet, _msgSender());
         emit CandyCreator721ACreated(clone);
         return clone;
     }

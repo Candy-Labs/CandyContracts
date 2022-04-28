@@ -119,10 +119,12 @@ contract CandyCreator721AUpgradeable is
         uint64 _maxWhitelistMints,
         // 20 bytes
         address candyWallet
+        // 20 bytes 
+        address owner
     )   public initializer {
         __ERC721A_init(name, symbol);
         __Ownable_init();
-        
+        transferOwnership(owner);
         setupPaymentSplit(candyWallet, splitAddresses, splitBasisPoints);
         if (_whitelistMerkleRoot != 0) {
             whitelistMerkleRoot = _whitelistMerkleRoot;
