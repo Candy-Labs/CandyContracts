@@ -118,7 +118,7 @@ contract CandyCreator721AUpgradeable is
         // 8 bytes
         uint64 _maxWhitelistMints,
         // 20 bytes
-        address candyWallet
+        address candyWallet,
         // 20 bytes 
         address owner
     )   public initializer {
@@ -144,7 +144,7 @@ contract CandyCreator721AUpgradeable is
     function setupPaymentSplit(address candyWallet, address[] memory splitAddresses, uint256[] memory splitBasisPoints) private onlyInitializing {
         addPayee(candyWallet, 500);
         if (splitAddresses.length == 0) {
-            addPayee(_msgSender(), 9500);
+            addPayee(msg.sender, 9500);
             lockPayees();
         } else {
             for (uint256 i = 0; i < splitAddresses.length; i++) {
@@ -474,6 +474,7 @@ contract CandyCreator721AUpgradeable is
     {
         return (
             interfaceId == type(CandyCollection2981RoyaltiesUpgradeable).interfaceId ||
+            interfaceId == type(CandyPaymentSplitterUpgradeable).interfaceId ||
             interfaceId == type(OwnableUpgradeable).interfaceId ||
             super.supportsInterface(interfaceId)
         );

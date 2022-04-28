@@ -25,8 +25,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 error ZeroBalance();
 error AddressAlreadyAssigned();
@@ -47,14 +45,13 @@ error SharesToZeroAddress();
  * function.
  */
 
-abstract contract CandyPaymentSplitterUpgradeable is Initializable, ContextUpgradeable {
+abstract contract CandyPaymentSplitterUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _numPayees;
 
     event PayeeAdded(address account, uint256 shares);
     event PaymentReleased(address to, uint256 amount);
     event PaymentReceived(address from, uint256 amount);
-    event RefundReleased(address to, uint256 amount);
 
     uint256 private _totalShares;
     uint256 private _totalReleased;
@@ -153,16 +150,4 @@ abstract contract CandyPaymentSplitterUpgradeable is Initializable, ContextUpgra
         emit PayeeAdded(account, shares_);
     }
 
-    // Release refund to account
-    function _releaseRefund(address account, uint256 payment) internal {
-        AddressUpgradeable.sendValue(payable(account), payment);
-        emit RefundReleased(account, payment);
-    }
-
-    /**
-     * @dev This empty reserved space is put in place to allow future versions to add new
-     * variables without shifting down storage in the inheritance chain.
-     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-     */
-    uint256[43] private __gap;
 }

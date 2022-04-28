@@ -14,10 +14,9 @@
 
 pragma solidity >=0.8.0 <0.9.0;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
 
-abstract contract CandyCollection2981RoyaltiesUpgradeable is Initializable, IERC2981Upgradeable {
+abstract contract CandyCollection2981RoyaltiesUpgradeable is IERC2981Upgradeable {
 
   address private royaltyAddress;
   uint256 private royaltyBasisPoints;
