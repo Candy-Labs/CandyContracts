@@ -82,8 +82,8 @@ contract CandyCreator721AUpgradeable is
     event UpdatedPresaleEnd(uint256 _old, uint256 _new);
     event UpdatedWhitelist(bytes32 _old, bytes32 _new);
     event UpdatedRoyalties(address newRoyaltyAddress, uint256 newPercentage);
+    event UpdatedPlaceholder(string _newPlaceholder);
     event PayeesLocked(bool _status);
-
 
     /***
      *    ░██████╗███████╗████████╗██╗░░░██╗██████╗░
@@ -288,6 +288,7 @@ contract CandyCreator721AUpgradeable is
     /// @dev Added so users can fix mistakes with expensive deployed contracts.
     function updatePlaceholder(string calldata _placeholderURI) external onlyOwner {
         placeholderURI = _placeholderURI;
+        emit UpdatedPlaceholder(placeholderURI);
     }
 
     /// @notice Enables minting. 
