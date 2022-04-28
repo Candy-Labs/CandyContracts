@@ -47,6 +47,9 @@ function createConfiguration() {
             'ERC721A/ERC721AUpgradeable.sol': {
                 content: fs.readFileSync(path.resolve(__dirname, 'contracts/Base/Token/ERC721A/ERC721AUpgradeable.sol'), 'utf8')
             },
+            'ERC721A/IERC721AUpgradeable.sol': {
+                content: fs.readFileSync(path.resolve(__dirname, 'contracts/Base/Token/ERC721A/IERC721AUpgradeable.sol'), 'utf8')
+            },
             '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol': {
                 content: fs.readFileSync(path.resolve('node_modules', '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol'), 'utf8')
             },
@@ -223,7 +226,7 @@ const config = createConfiguration();
 console.log(config);
 
 fs.outputJsonSync(
-    path.resolve('./standard-input/', 'CandyCreator721A' + '.json'),
+    path.resolve('./standard-input/', 'CandyCreator721AUpgradeable' + '.json'),
     config
 );
 

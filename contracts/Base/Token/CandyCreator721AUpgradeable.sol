@@ -6,7 +6,7 @@
  *    ╚█████╔╝██║░░██║██║░╚███║██████╔╝░░░██║░░░  ╚█████╔╝██║░░██║███████╗██║░░██║░░░██║░░░╚█████╔╝██║░░██║
  *    ░╚════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░  ░╚════╝░╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝░░░╚═╝░░░░╚════╝░╚═╝░░╚═╝
  *
- * Version: VALHALLA
+ * Version: LFG
  *
  * Purpose: ERC-721 template for no-code users.
  *          Placeholder for pre-reveal information.
@@ -113,10 +113,16 @@ contract CandyCreator721AUpgradeable is
         uint256[] memory splitBasisPoints,
         // 32 bytes
         bytes32 _whitelistMerkleRoot,
+        // 32 bytes 
+        uint256 _maxPublicMints,
+        // 8 bytes
+        uint64 _maxWhitelistMints,
         // 20 bytes
         address candyWallet
     )   public initializer {
         __ERC721A_init(name, symbol);
+        __Ownable_init();
+        
         setupPaymentSplit(candyWallet, splitAddresses, splitBasisPoints);
         if (_whitelistMerkleRoot != 0) {
             whitelistMerkleRoot = _whitelistMerkleRoot;
@@ -125,8 +131,8 @@ contract CandyCreator721AUpgradeable is
         placeholderURI = _placeholderURI;
         mintPrice = _mintPrice;
         mintSize = _mintSize;
-        maxWhitelistMints = 2;
-        maxPublicMints = 2;
+        maxPublicMints = _maxPublicMints;
+        maxWhitelistMints = _maxWhitelistMints;
     }
 
     /// @dev Called only within the logic of the initializer function to setup the payment splitting logic. 

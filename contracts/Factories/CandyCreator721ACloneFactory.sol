@@ -23,11 +23,13 @@ contract CandyCreator721ACloneFactory {
         uint256 _mintSize,
         address[] memory splitAddresses,
         uint256[] memory splitShares,
-        bytes32 _whitelistMerkleRoot
+        bytes32 _whitelistMerkleRoot,
+        uint256 _maxPublicMints,
+        uint64 _maxWhitelistMints
     )
     external returns (address) {
         address payable clone = payable(Clones.clone(tokenImplementation));
-        CandyCreator721AUpgradeable(clone).initialize(name, symbol, _placeholderURI, _mintPrice, _mintSize, splitAddresses, splitShares, _whitelistMerkleRoot, candyWallet);
+        CandyCreator721AUpgradeable(clone).initialize(name, symbol, _placeholderURI, _mintPrice, _mintSize, splitAddresses, splitShares, _whitelistMerkleRoot, _maxPublicMints, _maxWhitelistMints, candyWallet);
         emit CandyCreator721ACreated(clone);
         return clone;
     }

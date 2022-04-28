@@ -12,18 +12,9 @@ async function deploy721AFactory(candyWallet) {
 // Deploys a standard CandyCreator721A token using a factory contract 
 async function deploy721AToken(factoryContract) {
   const [owner, candyWallet, buyer1, royalty1] = await ethers.getSigners();
-  const newToken = await factoryContract.connect(owner).create721A("TestToken", "TEST", "placeholder.json", 1000000000 * 1, 10000, [owner.address, royalty1.address], [5000, 4500], "0x0000000000000000000000000000000000000000000000000000000000000000");
+  const newToken = await factoryContract.connect(owner).create721A("TestToken", "TEST", "placeholder.json", 1000000000 * 1, 10000, [owner.address, royalty1.address], [5000, 4500], "0x0000000000000000000000000000000000000000000000000000000000000000", 1, 1);
 }
 
-//
-// Deploys a standard CandyCreator721A token without using a factory contract
-async function deploy721ATokenNaive() {
-  const [owner, candyWallet, buyer1, royalty1] = await ethers.getSigners();
-  const CandyCreatorFactory = await ethers.getContractFactory("CandyCreator721A");
-  const CandyCreator = await CandyCreatorFactory.deploy("TestToken", "TEST", "candystorage/placeholder.json", 1000000000 * 1, 10000, candyWallet.address, true, [owner.address, royalty1.address], [5000, 4500], "0x0000000000000000000000000000000000000000000000000000000000000000");
-  await CandyCreator.deployed();
-  return { contract: CandyCreator, owner: owner, candyWallet: candyWallet, buyer1: buyer1, royalty1: royalty1 };
-}
 
 describe("CandyCreator721A Clone Factory", function () {
 
@@ -34,9 +25,6 @@ describe("CandyCreator721A Clone Factory", function () {
     await deploy721AFactory(candyWallet.address);
   });
 
-  it("Should deploy token without factory", async function () {
-    await deploy721ATokenNaive();
-  });
 
   it("Should deploy token using factory", async function () {
     const [_, candyWallet] = await ethers.getSigners();
@@ -47,12 +35,6 @@ describe("CandyCreator721A Clone Factory", function () {
   // Used to determine gas savings
 
   let TEST_LOOPS = 100
-
-  it(`Should deploy ${TEST_LOOPS} tokens without using a factory`, async function () {
-    for (var i = 0; i < TEST_LOOPS; i++) {
-      await deploy721ATokenNaive();
-    }
-  });
 
   it(`Should deploy ${TEST_LOOPS} tokens using a factory`, async function () {
     const [_, candyWallet] = await ethers.getSigners();

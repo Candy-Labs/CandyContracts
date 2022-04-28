@@ -50,6 +50,9 @@ function createConfiguration() {
             'Base/Token/ERC721A/ERC721AUpgradeable.sol': {
                 content: fs.readFileSync(path.resolve(__dirname, 'contracts/Base/Token/ERC721A/ERC721AUpgradeable.sol'), 'utf8')
             },
+            'Base/Token/ERC721A/IERC721AUpgradeable.sol': {
+                content: fs.readFileSync(path.resolve(__dirname, 'contracts/Base/Token/ERC721A/IERC721AUpgradeable.sol'), 'utf8')
+            },
             '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol': {
                 content: fs.readFileSync(path.resolve('node_modules', '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol'), 'utf8')
             },
