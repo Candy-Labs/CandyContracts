@@ -1,30 +1,14 @@
-
-// imports & defines
-
+// Imports
 const path = require('path');
 const solc = require('solc');
 const fs = require('fs-extra');
 
-const pkgName = require('./package.json')
-console.log(pkgName.dependencies.solc)
-
-// Functions
-//
-
-/**
- * Makes sure that the build folder is deleted, before every compilation
- * @returns {*} - Path where the compiled sources should be saved.
- */
 function compilingPreperations() {
     const buildPath = path.resolve(__dirname, 'new-build');
     fs.removeSync(buildPath);
     return buildPath;
 }
-//
-//
-/**
- * Returns and Object describing what to compile and what need to be returned.
- */
+
 function createConfiguration() {
     return {
         language: 'Solidity',
@@ -93,26 +77,13 @@ function createConfiguration() {
         settings: {
             metadata: { useLiteralContent: true },
             optimizer: {
-                // disabled by default
                 enabled: true,
-                // Optimize for how many times you intend to run the code.
-                // Lower values will optimize more for initial deployment cost, higher values will optimize more for high-frequency usage.
                 runs: 200
             },
             outputSelection: { "*": { "*": ["*"], "": ["*"] } },
         }
     };
 }
-
-
-
-/**
- * Compiles the sources, defined in the config object with solc-js.
- * @param config - Configuration object.
- * @returns {any} - Object with compiled sources and errors object.
- */
-
-// New syntax (supported from 0.5.12, mandatory from 0.6.0)
 
 function compileSources(config) {
     try {
@@ -122,10 +93,6 @@ function compileSources(config) {
     }
 }
 
-/**
- * Shows when there were errors during compilation.
- * @param compiledSources
- */
 function errorHandling(compiledSources) {
     if (!compiledSources) {
         console.error('>>>>>>>>>>>>>>>>>>>>>>>> ERRORS <<<<<<<<<<<<<<<<<<<<<<<<\n', 'NO OUTPUT');
@@ -135,59 +102,28 @@ function errorHandling(compiledSources) {
     }
 }
 
-/**
- * Writes the contracts from the compiled sources into JSON files, which you will later be able to
- * use in combination with web3.
- * @param compiled - Object containing the compiled contracts.
- * @param buildPath - Path of the build folder.
- */
 function writeOutput(compiled, buildPath) {
     fs.ensureDirSync(buildPath);
-
     for (let contractFileName in compiled.contracts) {
-
         const contractName = contractFileName.replace('.sol', '');
-        var short = ""
-
-
-        short = contractFileName.split("/").reverse()[0].replace('.sol', '');
-
-
-
-        //console.log(compiled.contracts[contractFileName])
+        const short = contractFileName.split("/").reverse()[0].replace('.sol', '');
         console.log('Writing: ', contractName + '.json');
-        //console.log(compiled.contracts[contractFileName])
-        //console.log(short)
         fs.outputJsonSync(
             path.resolve(buildPath, contractName + '.json'),
             compiled.contracts[contractFileName][short]
         );
-        //console.log(compiled.contracts)
     }
 }
 
-
-
-// Workflow
-
 const buildPath = compilingPreperations();
-
-
 const config = createConfiguration();
 
-console.log(config);
-
 fs.outputJsonSync(
+    // The standard-input-json files generated in this folder can be used to verify contracts
     path.resolve('./standard-input/', 'CandyCreator721ACloneFactory' + '.json'),
     config
 );
 
 const output = compileSources(config)
 errorHandling(output)
-console.log(output)
 writeOutput(output, buildPath)
-//const supertoken = output['contracts']['ERC721v2.1.2ETHColWLWith2981.sol']['ERC721v2ETHCollectionWhitelist']
-
-
-
-
