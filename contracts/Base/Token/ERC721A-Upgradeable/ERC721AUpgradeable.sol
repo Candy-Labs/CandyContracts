@@ -1,15 +1,23 @@
 // SPDX-License-Identifier: MIT
+// ERC721A Contracts v3.3.0
 // Creator: Chiru Labs
 
 pragma solidity ^0.8.4;
 
 import "./IERC721AUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+/**
+ * @dev ERC721 token receiver interface.
+ */
+interface ERC721A__IERC721ReceiverUpgradeable {
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4);
+}
 
 /**
  * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
@@ -21,10 +29,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
  *
  * Assumes that the maximum token id cannot exceed 2**256 - 1 (max value of uint256).
  */
-contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradeable, IERC721AUpgradeable {
-    using AddressUpgradeable for address;
-    using StringsUpgradeable for uint256;
-
+contract ERC721AUpgradeable is Initializable, IERC721AUpgradeable {
     // The tokenId of the next token to be minted.
     uint256 internal _currentIndex;
 
@@ -70,7 +75,7 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
     /**
      * @dev Burned tokens are calculated here, use _totalMinted() if you want to count just minted tokens.
      */
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         // Counter underflow is impossible as _burnCounter cannot be incremented
         // more than _currentIndex - _startTokenId() times
         unchecked {
@@ -92,11 +97,14 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165Upgradeable, IERC165Upgradeable) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        // The interface IDs are constants representing the first 4 bytes of the XOR of 
+        // all function selectors in the interface. See: https://eips.ethereum.org/EIPS/eip-165
+        // e.g. `bytes4(i.functionA.selector ^ i.functionB.selector ^ ...)`
         return
-            interfaceId == type(IERC721Upgradeable).interfaceId ||
-            interfaceId == type(IERC721MetadataUpgradeable).interfaceId ||
-            super.supportsInterface(interfaceId);
+            interfaceId == 0x01ffc9a7 || // ERC165 interface ID for ERC165.
+            interfaceId == 0x80ac58cd || // ERC165 interface ID for ERC721.
+            interfaceId == 0x5b5e139f; // ERC165 interface ID for ERC721Metadata.
     }
 
     /**
@@ -144,7 +152,7 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         uint256 curr = tokenId;
 
         unchecked {
-            if (_startTokenId() <= curr && curr < _currentIndex) {
+            if (_startTokenId() <= curr) if (curr < _currentIndex) {
                 TokenOwnership memory ownership = _ownerships[curr];
                 if (!ownership.burned) {
                     if (ownership.addr != address(0)) {
@@ -195,7 +203,7 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
 
         string memory baseURI = _baseURI();
-        return bytes(baseURI).length != 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : '';
+        return bytes(baseURI).length != 0 ? string(abi.encodePacked(baseURI, _toString(tokenId))) : '';
     }
 
     /**
@@ -214,11 +222,12 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         address owner = ERC721AUpgradeable.ownerOf(tokenId);
         if (to == owner) revert ApprovalToCurrentOwner();
 
-        if (_msgSender() != owner && !isApprovedForAll(owner, _msgSender())) {
+        if (_msgSenderERC721A() != owner) if(!isApprovedForAll(owner, _msgSenderERC721A())) {
             revert ApprovalCallerNotOwnerNorApproved();
         }
 
-        _approve(to, tokenId, owner);
+        _tokenApprovals[tokenId] = to;
+        emit Approval(owner, to, tokenId);
     }
 
     /**
@@ -234,10 +243,10 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
      * @dev See {IERC721-setApprovalForAll}.
      */
     function setApprovalForAll(address operator, bool approved) public virtual override {
-        if (operator == _msgSender()) revert ApproveToCaller();
+        if (operator == _msgSenderERC721A()) revert ApproveToCaller();
 
-        _operatorApprovals[_msgSender()][operator] = approved;
-        emit ApprovalForAll(_msgSender(), operator, approved);
+        _operatorApprovals[_msgSenderERC721A()][operator] = approved;
+        emit ApprovalForAll(_msgSenderERC721A(), operator, approved);
     }
 
     /**
@@ -279,7 +288,7 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         bytes memory _data
     ) public virtual override {
         _transfer(from, to, tokenId);
-        if (to.isContract() && !_checkContractOnERC721Received(from, to, tokenId, _data)) {
+        if (to.code.length != 0) if(!_checkContractOnERC721Received(from, to, tokenId, _data)) {
             revert TransferToNonERC721ReceiverImplementer();
         }
     }
@@ -337,19 +346,19 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
             uint256 updatedIndex = startTokenId;
             uint256 end = updatedIndex + quantity;
 
-            if (to.isContract()) {
+            if (to.code.length != 0) {
                 do {
                     emit Transfer(address(0), to, updatedIndex);
                     if (!_checkContractOnERC721Received(address(0), to, updatedIndex++, _data)) {
                         revert TransferToNonERC721ReceiverImplementer();
                     }
-                } while (updatedIndex != end);
+                } while (updatedIndex < end);
                 // Reentrancy protection
                 if (_currentIndex != startTokenId) revert();
             } else {
                 do {
                     emit Transfer(address(0), to, updatedIndex++);
-                } while (updatedIndex != end);
+                } while (updatedIndex < end);
             }
             _currentIndex = updatedIndex;
         }
@@ -388,7 +397,7 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
             do {
                 emit Transfer(address(0), to, updatedIndex++);
-            } while (updatedIndex != end);
+            } while (updatedIndex < end);
 
             _currentIndex = updatedIndex;
         }
@@ -414,17 +423,17 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         if (prevOwnership.addr != from) revert TransferFromIncorrectOwner();
 
-        bool isApprovedOrOwner = (_msgSender() == from ||
-            isApprovedForAll(from, _msgSender()) ||
-            getApproved(tokenId) == _msgSender());
+        bool isApprovedOrOwner = (_msgSenderERC721A() == from ||
+            isApprovedForAll(from, _msgSenderERC721A()) ||
+            getApproved(tokenId) == _msgSenderERC721A());
 
         if (!isApprovedOrOwner) revert TransferCallerNotOwnerNorApproved();
         if (to == address(0)) revert TransferToZeroAddress();
 
         _beforeTokenTransfers(from, to, tokenId, 1);
 
-        // Clear approvals from the previous owner
-        _approve(address(0), tokenId, from);
+        // Clear approvals from the previous owner.
+        delete _tokenApprovals[tokenId];
 
         // Underflow of the sender's balance is impossible because we check for
         // ownership above and the recipient's balance can't realistically overflow.
@@ -478,17 +487,17 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         address from = prevOwnership.addr;
 
         if (approvalCheck) {
-            bool isApprovedOrOwner = (_msgSender() == from ||
-                isApprovedForAll(from, _msgSender()) ||
-                getApproved(tokenId) == _msgSender());
+            bool isApprovedOrOwner = (_msgSenderERC721A() == from ||
+                isApprovedForAll(from, _msgSenderERC721A()) ||
+                getApproved(tokenId) == _msgSenderERC721A());
 
             if (!isApprovedOrOwner) revert TransferCallerNotOwnerNorApproved();
         }
 
         _beforeTokenTransfers(from, address(0), tokenId, 1);
 
-        // Clear approvals from the previous owner
-        _approve(address(0), tokenId, from);
+        // Clear approvals from the previous owner.
+        delete _tokenApprovals[tokenId];
 
         // Underflow of the sender's balance is impossible because we check for
         // ownership above and the recipient's balance can't realistically overflow.
@@ -528,20 +537,6 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
     }
 
     /**
-     * @dev Approve `to` to operate on `tokenId`
-     *
-     * Emits a {Approval} event.
-     */
-    function _approve(
-        address to,
-        uint256 tokenId,
-        address owner
-    ) private {
-        _tokenApprovals[tokenId] = to;
-        emit Approval(owner, to, tokenId);
-    }
-
-    /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target contract.
      *
      * @param from address representing the previous owner of the given token ID
@@ -556,8 +551,9 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         uint256 tokenId,
         bytes memory _data
     ) private returns (bool) {
-        try IERC721ReceiverUpgradeable(to).onERC721Received(_msgSender(), from, tokenId, _data) returns (bytes4 retval) {
-            return retval == IERC721ReceiverUpgradeable(to).onERC721Received.selector;
+        try ERC721A__IERC721ReceiverUpgradeable(to).onERC721Received(_msgSenderERC721A(), from, tokenId, _data) 
+        returns (bytes4 retval) {
+            return retval == ERC721A__IERC721ReceiverUpgradeable(to).onERC721Received.selector;
         } catch (bytes memory reason) {
             if (reason.length == 0) {
                 revert TransferToNonERC721ReceiverImplementer();
@@ -613,6 +609,41 @@ contract ERC721AUpgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         uint256 startTokenId,
         uint256 quantity
     ) internal virtual {}
+
+    /**
+     * @dev Returns the message sender (defaults to `msg.sender`).
+     * 
+     * If you are writing GSN compatible contracts, you need to override this function.
+     */
+    function _msgSenderERC721A() internal view virtual returns (address) {
+        return msg.sender;
+    }
+
+    /**
+     * @dev Converts a `uint256` to its ASCII `string` decimal representation.
+     */
+    function _toString(uint256 value) internal pure returns (string memory) {
+        // Inspired by OraclizeAPI's implementation - MIT licence
+        // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
+        unchecked {
+            if (value == 0) {
+                return "0";
+            }
+            uint256 temp = value;
+            uint256 digits;
+            while (temp != 0) {
+                ++digits;
+                temp /= 10;
+            }
+            bytes memory buffer = new bytes(digits);
+            while (value != 0) {
+                --digits;
+                buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+                value /= 10;
+            }
+            return string(buffer);    
+        }
+    }
 
     /**
      * @dev This empty reserved space is put in place to allow future versions to add new

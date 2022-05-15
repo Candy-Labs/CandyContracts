@@ -6,7 +6,7 @@
  *    ╚█████╔╝██║░░██║██║░╚███║██████╔╝░░░██║░░░  ╚█████╔╝██║░░██║███████╗██║░░██║░░░██║░░░╚█████╔╝██║░░██║
  *    ░╚════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░  ░╚════╝░╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝░░░╚═╝░░░░╚════╝░╚═╝░░╚═╝
  *
- * Version: LFG
+ * Version: AuditV1
  *
  * Purpose: ERC-721 template for no-code users.
  *          Placeholder for pre-reveal information.
@@ -49,7 +49,8 @@ contract CandyCreator721AUpgradeable is
     OwnableUpgradeable,
     ERC721AUpgradeable,
     CandyPaymentSplitterUpgradeable,
-    CandyCollection2981RoyaltiesUpgradeable
+    CandyCollection2981RoyaltiesUpgradeable,
+    RoyaltiesV2Impl
 {
     // State Variables
     string private base;
@@ -65,12 +66,17 @@ contract CandyCreator721AUpgradeable is
     uint256 private mintSize;
     // 8 bytes 
     uint64 private maxWhitelistMints;
+    // Used to signal support of ERC2981 to Mintable marketplace 
+    // https://ethereum-blockchain-developer.com/121-erc721-secondary-sales-royalties-erc2981/06-mintable-erc2981-royalties/
+    // 4 bytes 
+    bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
     // 1 byte 
     bool private whitelistActive;
     // 1 byte 
     bool private mintingActive;
     // 1 byte
     bool private lockedPayees;
+    
     
     // Contract Events 
     event UpdatedMintPrice(uint256 _old, uint256 _new);
@@ -481,6 +487,8 @@ contract CandyCreator721AUpgradeable is
             interfaceId == type(CandyCollection2981RoyaltiesUpgradeable).interfaceId ||
             interfaceId == type(CandyPaymentSplitterUpgradeable).interfaceId ||
             interfaceId == type(OwnableUpgradeable).interfaceId ||
+            // For Mintable marketplace
+            interfaceId == _INTERFACE_ID_ERC2981 ||
             super.supportsInterface(interfaceId)
         );
     }
