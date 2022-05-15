@@ -25,7 +25,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./ERC721A/ERC721AUpgradeable.sol";
+import "./ERC721A-Upgradeable/ERC721AUpgradeable.sol";
 import "../PaymentSplitter/CandyPaymentSplitterUpgradeable.sol";
 import "../Royalties/CandyCollection2981RoyaltiesUpgradeable.sol";
 
@@ -49,8 +49,7 @@ contract CandyCreator721AUpgradeable is
     OwnableUpgradeable,
     ERC721AUpgradeable,
     CandyPaymentSplitterUpgradeable,
-    CandyCollection2981RoyaltiesUpgradeable,
-    RoyaltiesV2Impl
+    CandyCollection2981RoyaltiesUpgradeable
 {
     // State Variables
     string private base;
@@ -487,7 +486,7 @@ contract CandyCreator721AUpgradeable is
             interfaceId == type(CandyCollection2981RoyaltiesUpgradeable).interfaceId ||
             interfaceId == type(CandyPaymentSplitterUpgradeable).interfaceId ||
             interfaceId == type(OwnableUpgradeable).interfaceId ||
-            // For Mintable marketplace
+            // For Mintable marketplace to signal EIP-2981 support
             interfaceId == _INTERFACE_ID_ERC2981 ||
             super.supportsInterface(interfaceId)
         );
