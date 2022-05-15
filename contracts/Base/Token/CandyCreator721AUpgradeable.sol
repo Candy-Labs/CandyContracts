@@ -79,11 +79,8 @@ contract CandyCreator721AUpgradeable is
     event UpdatedMaxPublicMints(uint256 _old, uint256 _new);
     event UpdatedMintStatus(bool _old, bool _new);
     event UpdatedWhitelistStatus(bool _old, bool _new);
-    event UpdatedPresaleEnd(uint256 _old, uint256 _new);
     event UpdatedWhitelist(bytes32 _old, bytes32 _new);
-    event UpdatedRoyalties(address newRoyaltyAddress, uint256 newPercentage);
     event UpdatedPlaceholder(string _newPlaceholder);
-    event PayeesLocked(bool _status);
 
     /***
      *    ░██████╗███████╗████████╗██╗░░░██╗██████╗░
@@ -114,9 +111,9 @@ contract CandyCreator721AUpgradeable is
         // 32 bytes
         bytes32 _whitelistMerkleRoot,
         // 32 bytes 
-        uint256 _maxPublicMints,
-        // 8 bytes
-        uint64 _maxWhitelistMints,
+        uint256 royaltyBasisPoints,
+        // 20 bytes 
+        address royaltyAddress,
         // 20 bytes
         address candyWallet,
         // 20 bytes 
@@ -126,6 +123,7 @@ contract CandyCreator721AUpgradeable is
         __Ownable_init();
         transferOwnership(owner);
         setupPaymentSplit(candyWallet, splitAddresses, splitBasisPoints);
+        setRoyaltyInfo(royaltyAddress, royaltyBasisPoints);
         if (_whitelistMerkleRoot != 0) {
             whitelistMerkleRoot = _whitelistMerkleRoot;
             enableWhitelist();
@@ -133,8 +131,8 @@ contract CandyCreator721AUpgradeable is
         placeholderURI = _placeholderURI;
         mintPrice = _mintPrice;
         mintSize = _mintSize;
-        maxPublicMints = _maxPublicMints;
-        maxWhitelistMints = _maxWhitelistMints;
+        maxPublicMints = 1;
+        maxWhitelistMints = 1;
     }
 
     /// @dev Called only within the logic of the initializer function to setup the payment splitting logic. 
@@ -174,21 +172,21 @@ contract CandyCreator721AUpgradeable is
     {
         if (!mintingActive) revert MintingNotActive();
         if (!whitelistActive) revert WhitelistNotRequired();
-        if (_msgValue() != mintPrice * amount) revert WrongPayment();
+        if (msg.value != mintPrice * amount) revert WrongPayment();
         if (totalSupply() + amount > mintSize) revert WouldExceedMintSize();
         if (amount > maxWhitelistMints) revert ExceedsMaxWhitelistMints();
         if (
             !MerkleProofUpgradeable.verify(
                 merkleProof,
                 whitelistMerkleRoot,
-                keccak256(abi.encodePacked(_msgSender()))
+                keccak256(abi.encodePacked(msg.sender))
             )
         ) revert NotWhitelisted();
-        uint64 numWhitelistMinted = _getAux(_msgSender()) + amount;
+        uint64 numWhitelistMinted = _getAux(msg.sender) + amount;
         if (numWhitelistMinted > maxWhitelistMints)
             revert NotEnoughWhitelistSlots();
-        _safeMint(_msgSender(), amount);
-        _setAux(_msgSender(), numWhitelistMinted);
+        _mint(msg.sender, amount);
+        _setAux(msg.sender, numWhitelistMinted);
     }
 
     /// @notice Mint function for use with public minting sales. Mint Fees in native token,
@@ -197,10 +195,20 @@ contract CandyCreator721AUpgradeable is
     function publicMint(uint256 amount) external payable {
         if (whitelistActive) revert WhitelistRequired();
         if (!mintingActive) revert MintingNotActive();
-        if (_msgValue() != mintPrice * amount) revert WrongPayment();
+        if (msg.value != mintPrice * amount) revert WrongPayment();
         if (totalSupply() + amount > mintSize) revert WouldExceedMintSize();
         if (amount > maxPublicMints) revert ExceedsMaxTransactionMints();
-        _safeMint(_msgSender(), amount);
+        _mint(msg.sender, amount);
+    }
+
+    /// @notice Airdrop (mint directly) to a set of recipients.
+    /// @param recipients The list of recipient addresses.
+    /// @param amounts The list of amounts corresponding to each recipient address in the first parameter.
+    function airdrop(address[] memory recipients, uint256[] memory amounts) external onlyOwner {
+        for (uint256 i = 0; i < recipients.length; i++) {
+            // Mint tokens to recipient
+            _mint(recipients[i], amounts[i]);
+        }
     }
 
     /***
@@ -216,13 +224,13 @@ contract CandyCreator721AUpgradeable is
     // Function to receive ether, msg.data must be empty
     receive() external payable {
         // From PaymentSplitter.sol
-        emit PaymentReceived(_msgSender(), _msgValue());
+        emit PaymentReceived(msg.sender, msg.value);
     }
 
     // Function to receive ether, msg.data is not empty
     fallback() external payable {
         // From PaymentSplitter.sol
-        emit PaymentReceived(_msgSender(), _msgValue());
+        emit PaymentReceived(msg.sender, msg.value);
     }
 
     /// @notice Releases funds from the contract to the addresses owed payment.
@@ -238,12 +246,9 @@ contract CandyCreator721AUpgradeable is
     /// @param _royaltyAddress - Address for all royalties to go to.
     /// @param _basisPoints - Basis points (out of 10,000) to set as secondary sale royalty fee.
     ///  of secondary sales
-    function setRoyaltyInfo(address _royaltyAddress, uint256 _basisPoints)
-        public
-        onlyOwner
+    function setRoyaltyInfo(address _royaltyAddress, uint256 _basisPoints) private
     {
         _setRoyalties(_royaltyAddress, _basisPoints);
-        emit UpdatedRoyalties(_royaltyAddress, _basisPoints);
     }
 
     /// @notice this will set the fees required to mint using
@@ -269,7 +274,6 @@ contract CandyCreator721AUpgradeable is
     function lockPayees() private {
         require(!lockedPayees, "Can not set, payees locked");
         lockedPayees = true;
-        emit PayeesLocked(lockedPayees);
     }
 
     /***
