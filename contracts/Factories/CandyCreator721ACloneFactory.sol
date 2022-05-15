@@ -5,8 +5,6 @@ import "../Base/Token/CandyCreator721AUpgradeable.sol";
 import "../Base/Royalties/RoyaltySplitterUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 
-// Don't use Upgradeable name for the clones?
-
 contract CandyCreator721ACloneFactory {
 
     address immutable tokenImplementation;
